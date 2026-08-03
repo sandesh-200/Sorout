@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
-from models.interview_candidate import InterviewSessionStatus
+from models.interview_session import InterviewSessionStatus
 
 
 class InterviewSessionResponse(BaseModel):
@@ -54,6 +54,7 @@ class CandidateInterviewResponse(BaseModel):
     title: str
     job_position: str
     seniority_level: str
+    max_questions:int
 
     status: InterviewSessionStatus
 

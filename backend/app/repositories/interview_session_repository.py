@@ -1,14 +1,12 @@
 from sqlalchemy.orm import Session
-
-from models.interview_candidate import InterviewCandidate
-from models.interview_candidate import InterviewCandidate,InterviewSessionStatus
-from models.interview_candidate import InterviewCandidate
+from models.interview_session import InterviewSession,InterviewSessionStatus
 from models.interview import Interview
+
 
 class InterviewSessionRepository:
     @staticmethod
-    def create(db:Session,interview_id:int,candidate_id:int,current_interview_question_id:int)->InterviewCandidate:
-        session = InterviewCandidate(interview_id=interview_id,candidate_id=candidate_id,current_interview_question_id=current_interview_question_id)
+    def create(db:Session,interview_id:int,candidate_id:int,current_interview_question_id:int)->InterviewSession:
+        session = InterviewSession(interview_id=interview_id,candidate_id=candidate_id,current_interview_question_id=current_interview_question_id)
         db.add(session)
         db.flush()
         return session
@@ -23,10 +21,10 @@ class InterviewSessionRepository:
         existing_candidate_ids = {
             session.candidate_id
             for session in (
-                db.query(InterviewCandidate)
+                db.query(InterviewSession)
                 .filter(
-                    InterviewCandidate.interview_id == interview_id,
-                    InterviewCandidate.candidate_id.in_(candidate_ids),
+                    InterviewSession.interview_id == interview_id,
+                    InterviewSession.candidate_id.in_(candidate_ids),
                 )
                 .all()
             )
@@ -39,7 +37,7 @@ class InterviewSessionRepository:
         ]
 
         sessions = [
-            InterviewCandidate(
+            InterviewSession(
                 interview_id=interview_id,
                 candidate_id=candidate_id,
                 status=InterviewSessionStatus.not_started,
@@ -61,12 +59,12 @@ class InterviewSessionRepository:
     @staticmethod
     def get_by_id(db:Session,session_id:int):
         return (
-            db.query(InterviewCandidate).filter(InterviewCandidate.id == session_id).first()
+            db.query(InterviewSession).filter(InterviewSession.id == session_id).first()
         )
     
     @staticmethod
     def get_by_interview_and_candidate(db:Session,interview_id:int,candidate_id:int):
-        return (db.query(InterviewCandidate).filter(InterviewCandidate.interview_id==interview_id,InterviewCandidate.candidate_id==candidate_id).first())
+        return (db.query(InterviewSession).filter(InterviewSession.interview_id==interview_id,InterviewSession.candidate_id==candidate_id).first())
     
     @staticmethod
     def update(
@@ -85,23 +83,24 @@ class InterviewSessionRepository:
     ):
         return (
             db.query(
-                InterviewCandidate.id.label("session_id"),
+                InterviewSession.id.label("session_id"),
                 Interview.id.label("interview_id"),
                 Interview.title,
                 Interview.job_position,
                 Interview.seniority_level,
-                InterviewCandidate.status,
-                InterviewCandidate.enrolled_at,
+                Interview.max_questions,
+                InterviewSession.status,
+                InterviewSession.enrolled_at,
             )
             .join(
                 Interview,
-                Interview.id == InterviewCandidate.interview_id,
+                Interview.id == InterviewSession.interview_id,
             )
             .filter(
-                InterviewCandidate.candidate_id == candidate_id,
+                InterviewSession.candidate_id == candidate_id,
             )
             .order_by(
-                InterviewCandidate.enrolled_at.desc()
+                InterviewSession.enrolled_at.desc()
             )
             .all()
         )

@@ -13,7 +13,9 @@ from repositories.interview_session_repository import (
 from repositories.question_evaluation_repository import (
     QuestionEvaluationRepository,
 )
-from models.interview_candidate import InterviewSessionStatus
+from services.evaluation_context import EvaluationContextService
+from repositories.conversation_repository import ConversationRepository
+from models.interview_session import InterviewSessionStatus
 
 
 class EvaluationService:
@@ -36,19 +38,26 @@ class EvaluationService:
         
         answers = AnswerRepository.get_by_session(db,session.id,)
 
-        qa_pairs = [
-            {
-        "question": answer.question.question_text,
-        "answer": answer.answer_text,
-        "answer_id": answer.id,
-        }
-        for answer in answers
-        ]
+        messages = ConversationRepository.get_by_session(
+    db,
+    session.id,
+)
 
-        result = InterviewEvaluator.evaluate(
-            interview=session.interview,
-            qa_pairs=qa_pairs
-        )
+        context = EvaluationContextService.build(
+    interview=session.interview,
+    answers=answers,
+    messages=messages,
+)
+
+        print("=" * 80)
+        print(context)
+        print("=" * 80)
+
+        
+
+        
+
+        result = InterviewEvaluator.evaluate(**context)
 
         interview_evaluation = (
             InterviewEvaluationRepository.create(

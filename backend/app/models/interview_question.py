@@ -13,5 +13,8 @@ class InterviewQuestion(Base):
 
     order_sequence = Column(Integer, nullable=False)
 
-    interview = relationship("Interview")
+    interview = relationship(
+    "Interview",
+    back_populates="questions",
+)
     question = relationship("Question")

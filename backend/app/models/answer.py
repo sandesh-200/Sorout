@@ -8,7 +8,7 @@ class Answer(Base):
 
     id = Column(Integer, primary_key=True)
 
-    session_id = Column(Integer, ForeignKey("interview_candidates.id", ondelete="CASCADE"))
+    session_id = Column(Integer, ForeignKey("interview_sessions.id", ondelete="CASCADE"))
     question_id = Column(Integer, ForeignKey("questions.id", ondelete="CASCADE"))
 
     answer_text = Column(Text, nullable=False)
@@ -17,5 +17,5 @@ class Answer(Base):
 
     evaluation = relationship("QuestionEvaluation",uselist=False,back_populates="answer")
 
-    session = relationship("InterviewCandidate")
+    session = relationship("InterviewSession")
     question = relationship("Question",uselist=False)

@@ -6,7 +6,7 @@ llm_endpoint = HuggingFaceEndpoint(
     task="text-generation",
     huggingfacehub_api_token=settings.HF_TOKEN,
     temperature=0.3,
-    max_new_tokens=1024,
+    max_new_tokens=2048,
 )
 
 llm = ChatHuggingFace(llm=llm_endpoint)

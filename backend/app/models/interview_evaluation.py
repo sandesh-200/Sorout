@@ -20,7 +20,7 @@ class InterviewEvaluation(Base):
     session_id = Column(
         Integer,
         ForeignKey(
-            "interview_candidates.id",
+            "interview_sessions.id",
             ondelete="CASCADE",
         ),
         unique=True,
@@ -53,7 +53,7 @@ class InterviewEvaluation(Base):
     )
 
     session = relationship(
-        "InterviewCandidate",
+        "InterviewSession",
     )
 
     question_evaluations = relationship(

@@ -14,17 +14,17 @@ router = APIRouter(
 )
 
 @router.post(
-    "/{interview_id}/start",
+    "/{session_id}/start",
     response_model=InterviewSessionResponse,
 )
 def start_interview(
-    interview_id: int,
+    session_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(candidate_required),
 ):
     return InterviewSessionService.start_interview(
         db=db,
-        interview_id=interview_id,
+        session_id=session_id,
         candidate_id=current_user.id,
     )
 

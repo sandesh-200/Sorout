@@ -17,23 +17,23 @@ prompt = INTERVIEW_EVALUATION_PROMPT.partial(
 
 chain = prompt | llm | parser
 
-class InterviewEvaluator:
-    @staticmethod
-    def evaluate(interview,qa_pairs):
-        conversation = ""
 
-        for index,pair in enumerate(qa_pairs,start=-1):
-            conversation += (
-                f"Question {index}:\n"
-                f"{pair['question']}\n\n"
-                f"Answer:\n"
-                f"{pair['answer']}\n\n"
-            )
-        
-        return chain.invoke(
+
+class InterviewEvaluator:
+
+    @staticmethod
+    def evaluate(
+        position,
+        level,
+        interview_questions,
+        conversation,
+    ):
+        result = chain.invoke(
             {
-                "position": interview.job_position,
-                "level": interview.seniority_level,
+                "position": position,
+                "level": level,
+                "interview_questions": interview_questions,
                 "conversation": conversation,
             }
         )
+        return result

@@ -11,8 +11,8 @@ class InterviewSessionStatus(str, enum.Enum):
     evaluated = "evaluated"
 
 
-class InterviewCandidate(Base):
-    __tablename__ = "interview_candidates"
+class InterviewSession(Base):
+    __tablename__ = "interview_sessions"
 
     id = Column(Integer, primary_key=True)
 
@@ -29,3 +29,9 @@ class InterviewCandidate(Base):
     candidate = relationship("User")
     current_interview_question = relationship("InterviewQuestion",foreign_keys=[current_interview_question_id])
     evaluation = relationship("InterviewEvaluation",uselist=False)
+    messages = relationship(
+    "ConversationMessage",
+    back_populates="session",
+    cascade="all, delete-orphan",
+    order_by="ConversationMessage.created_at",
+)

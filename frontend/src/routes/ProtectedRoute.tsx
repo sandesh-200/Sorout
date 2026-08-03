@@ -22,9 +22,21 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user.role)) {
-    return <Navigate to="/unauthorized" replace />;
-  }
+if (
+  allowedRoles &&
+  !allowedRoles.includes(user.role)
+) {
+  return (
+    <Navigate
+      to={
+        user.role === "admin"
+          ? "/admin/dashboard"
+          : "/candidate/interviews"
+      }
+      replace
+    />
+  );
+}
 
   return children;
 }

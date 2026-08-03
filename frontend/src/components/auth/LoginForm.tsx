@@ -35,15 +35,27 @@ export function LoginForm({
   })
 
   // 2. Handle Login Submission
-  const onSubmit = async (data: LoginRequest) => {
-    try {
-      await loginUser(data)
-      await fetchUser()
-      navigate("/dashboard")
-    } catch (error) {
-      console.error("Login error:", error)
+const onSubmit = async (data: LoginRequest) => {
+  try {
+    await loginUser(data);
+
+    const user = await fetchUser();
+
+    if (!user) return;
+
+    if (user.role === "admin") {
+      navigate("/admin/dashboard", {
+        replace: true,
+      });
+    } else {
+      navigate("/candidate/interviews", {
+        replace: true,
+      });
     }
+  } catch (error) {
+    console.error("Login error:", error);
   }
+};
 
   return (
     <form 
