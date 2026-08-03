@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from models.user import User, UserRole
-from models.interview_candidate import InterviewCandidate
+from models.interview_session import InterviewSession
 
 
 class UserRepository:
@@ -68,9 +68,9 @@ class UserRepository:
         interview_id: int,
     ):
         assigned_candidate_ids = (
-            db.query(InterviewCandidate.candidate_id)
+            db.query(InterviewSession.candidate_id)
             .filter(
-                InterviewCandidate.interview_id == interview_id
+                InterviewSession.interview_id == interview_id
             )
         )
 

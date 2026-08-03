@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from models.interview_question import InterviewQuestion
-from models.interview_candidate import InterviewCandidate
+from models.interview_session import InterviewSession
 from models.question import Question
 
 
@@ -34,15 +34,15 @@ class InterviewQuestionRepository:
         return (
             db.query(InterviewQuestion)
             .join(
-                InterviewCandidate,
-                InterviewCandidate.interview_id == InterviewQuestion.interview_id,
+                InterviewSession,
+                InterviewSession.interview_id == InterviewQuestion.interview_id,
             )
             .join(
                 Question,
                 Question.id == InterviewQuestion.question_id,
             )
             .filter(
-                InterviewCandidate.id == session_id
+                InterviewSession.id == session_id
             )
             .order_by(
                 InterviewQuestion.order_sequence

@@ -21,6 +21,11 @@ export interface SubmitAnswerRequest {
 
 export interface SubmitAnswerResponse {
   completed: boolean;
+  interview_question_id?: number;
+  question_id?: number;
+  question_text?: string;
+  category?: "Technical" | "Behavioral";
+  order?: number;
 }
 
 export interface InterviewSessionState {

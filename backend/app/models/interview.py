@@ -29,3 +29,10 @@ class Interview(Base):
 
     # relationships
     creator = relationship("User")
+
+    questions = relationship(
+        "InterviewQuestion",
+        back_populates="interview",
+        cascade="all, delete-orphan",
+        order_by="InterviewQuestion.order_sequence",
+    )

@@ -1,10 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
 
 
 class QuestionEvaluationResponse(BaseModel):
-    question: str
-    answer: str
-    score: int
+    question: str = Field(
+        description="Interview question"
+    )
+    answer:str
+    score: int = Field(
+        ge=1,
+        le=10,
+    )
+
     feedback: str
 
 

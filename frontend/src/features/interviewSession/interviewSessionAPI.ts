@@ -2,8 +2,8 @@ import api from "@/api/axios";
 import type { SubmitAnswerRequest } from "./interviewSessionTypes";
 
 export const interviewSessionAPI = {
-  start: (interviewId: number) =>
-    api.post(`/interview_session/${interviewId}/start`),
+  start: (sessionId: number) =>
+    api.post(`/interview_session/${sessionId}/start`),
 
   getCurrentQuestion: (sessionId: number) =>
     api.get(`/interview_session/${sessionId}/current-question`),

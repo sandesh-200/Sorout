@@ -2,9 +2,8 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime
 
-from models.interview import InterviewStatus
-from models.interview_candidate import InterviewSessionStatus
-from repositories.interview_repository import InterviewRepository
+
+from models.interview_session import InterviewSessionStatus
 from repositories.interview_session_repository import (
     InterviewSessionRepository,
 )
@@ -19,61 +18,39 @@ class InterviewSessionService:
     @staticmethod
     def start_interview(
         db: Session,
-        interview_id: int,
+        session_id: int,
         candidate_id: int,
     ):
-        interview = InterviewRepository.get_by_id(
-            db,
-            interview_id,
-        )
+        session = InterviewSessionRepository.get_by_id(
+    db=db,
+    session_id=session_id,
+)
 
-        if not interview:
+        if not session:
             raise HTTPException(
-                status_code=404,
-                detail="Interview not found.",
-            )
+        status_code=404,
+        detail="Interview session not found.",
+    )
 
-        if interview.status != InterviewStatus.ready:
+        if session.candidate_id != candidate_id:
             raise HTTPException(
-                status_code=400,
-                detail="Interview is not ready yet.",
-            )
+        status_code=403,
+        detail="You don't have permission to access this interview.",
+    )
 
-        existing_session = (
-            InterviewSessionRepository.get_by_interview_and_candidate(
-                db=db,
-                interview_id=interview_id,
-                candidate_id=candidate_id,
-            )
-        )
-
-        if existing_session:
+        if session.status != InterviewSessionStatus.not_started:
             raise HTTPException(
-                status_code=400,
-                detail="You have already started this interview.",
-            )
+        status_code=400,
+        detail="Interview has already been started.",
+    )
         
-        first_question = InterviewQuestionRepository.get_first_question(
+        session.status = InterviewSessionStatus.ongoing
+        InterviewSessionRepository.update(
             db=db,
-            interview_id=interview_id
+            session=session
         )
-
-        if not first_question:
-            raise HTTPException(
-                status_code=400,
-                detail="Interview has no questions"
-            )
-
-        session = InterviewSessionRepository.create(
-            db=db,
-            interview_id=interview_id,
-            candidate_id=candidate_id,
-            current_interview_question_id=first_question.id
-        )
-
         db.commit()
         db.refresh(session)
-
         return session
     
     @staticmethod

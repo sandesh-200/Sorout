@@ -13,6 +13,16 @@ router = APIRouter(
 )
 
 
+@router.post("/sessions/{session_id}/evaluate")
+def evaluate(
+    session_id: int,
+    db: Session = Depends(get_db),
+):
+    return EvaluationService.evaluate_session(
+        db=db,
+        session_id=session_id,
+    )
+
 @router.get(
     "/sessions/{session_id}/result",
     response_model=InterviewEvaluationResponse,

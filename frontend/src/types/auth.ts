@@ -37,7 +37,7 @@ export interface AuthContextType {
   user: GetMeResponse | null;
   setUser: React.Dispatch<React.SetStateAction<GetMeResponse | null>>;
   loading: boolean;
-  fetchUser: () => Promise<void>;
+  fetchUser: () => Promise<GetMeResponse | null>;
 }
 
 export interface AuthProviderProps {
