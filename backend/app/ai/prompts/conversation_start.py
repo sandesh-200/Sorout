@@ -27,6 +27,7 @@ Requirements:
 - Do not ask multiple questions.
 - Do not explain the interview process.
 - Keep the response under 120 words.
+- DO NOT start the question with "Can you..." or "Could you...". Vary the phrasing naturally.
 """
         )
     ]

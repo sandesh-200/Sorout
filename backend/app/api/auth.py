@@ -78,11 +78,10 @@ def get_me(
 
 @router.post("/logout")
 def logout(response: Response):
-
     response.delete_cookie(
-        key="access_token"
+        key="access_token",
+        path="/",
+        httponly=True,
+        samesite="lax"
     )
-
-    return {
-        "message": "Logged out successfully"
-    }
+    return {"message": "Logged out successfully"}

@@ -8,10 +8,12 @@ import { TooltipProvider } from './components/ui/tooltip.tsx'
 import App from './App.tsx'
 import './index.css'
 import { Toaster } from './components/ui/sonner.tsx'
+import { ThemeProvider } from './components/shared/theme-provider.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
+      <ThemeProvider>
       <BrowserRouter>
         <AuthProvider>
           <TooltipProvider>
@@ -20,6 +22,7 @@ createRoot(document.getElementById('root')!).render(
           </TooltipProvider>
         </AuthProvider>
       </BrowserRouter>
+      </ThemeProvider>
     </Provider>
   </StrictMode>,
 )

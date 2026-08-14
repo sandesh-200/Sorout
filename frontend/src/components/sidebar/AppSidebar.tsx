@@ -1,78 +1,63 @@
-// import * as React from "react"
-
-// import { NavMain } from "@/components/sidebar/SidebarMain"
-// import { NavUser } from "@/components/sidebar/SidebarUser"
-// import { SidebarBrand } from "@/components/sidebar/SidebarBranc"
-// import {
-//   Sidebar,
-//   SidebarContent,
-//   SidebarFooter,
-//   SidebarHeader,
-//   SidebarRail,
-// } from "@/components/ui/sidebar"
-// import { data } from "@/constants/dashbaord"
-
-
-
-// export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-//   return (
-//     <Sidebar collapsible="icon" {...props}>
-//       <SidebarHeader>
-//         <SidebarBrand/>
-//       </SidebarHeader>
-//       <SidebarContent>
-//         <NavMain items={data.sidebarItems} />
-
-//       </SidebarContent>
-//       <SidebarFooter>
-//         <NavUser user={data.sidebarUser} />
-//       </SidebarFooter>
-//       <SidebarRail />
-//     </Sidebar>
-//   )
-// }
-
-
-
+// AppSidebar.tsx
 import * as React from "react";
-import { GenericNavMain } from "@/components/sidebar/SidebarMain";
+import { GenericNavMain, type NavItem } from "@/components/sidebar/SidebarMain";
 import { NavUser } from "@/components/sidebar/SidebarUser";
-import { SidebarBrand } from "@/components/sidebar/SidebarBranc";
+import { SidebarBrand } from "@/components/sidebar/SidebarBrand";
+import { SidebarCollapser } from "@/components/sidebar/SidebarCollapser";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarRail,
 } from "@/components/ui/sidebar";
 
-interface SidebarProps extends React.ComponentProps<typeof Sidebar> {
-  groupLabel: string;
-  items: {
-    title: string;
-    url: string;
-    icon?: React.ReactNode;
-  }[];
+export interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
+  groupLabel?: string;
+  items: NavItem[];
   user: {
     name: string;
     email: string;
-    avatar: string;
+    avatar?: string;
   };
+  brandTitle?: string;
+  logoSrc?: string;
+  onLogout?: () => void;
+  onUpgrade?: () => void;
+  onBilling?: () => void;
 }
 
-export function AppSidebar({ groupLabel, items, user, ...props }: SidebarProps) {
+export function AppSidebar({
+  groupLabel,
+  items,
+  user,
+  brandTitle = "Sorout",
+  logoSrc = "/images/logo.png",
+  onLogout,
+  onUpgrade,
+  onBilling,
+  ...props
+}: AppSidebarProps) {
   return (
-    <Sidebar collapsible="icon" {...props}>
+    <Sidebar collapsible="icon" className="relative z-20" {...props}>
+      {/* Floating collapser button attached to sidebar border */}
+      <SidebarCollapser />
+
       <SidebarHeader>
-        <SidebarBrand />
+        <SidebarBrand title={brandTitle} logoSrc={logoSrc} />
       </SidebarHeader>
+
       <SidebarContent>
         <GenericNavMain label={groupLabel} items={items} />
       </SidebarContent>
+
       <SidebarFooter>
-        <NavUser user={user} />
+        <NavUser
+          user={user}
+          onLogout={onLogout}
+          onUpgrade={onUpgrade}
+          onBilling={onBilling}
+        />
       </SidebarFooter>
-      <SidebarRail />
     </Sidebar>
   );
 }

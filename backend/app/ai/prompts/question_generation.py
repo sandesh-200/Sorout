@@ -28,6 +28,7 @@ Instructions:
 - Ensure every question is relevant to evaluating a candidate for the specified role.
 - Avoid generic questions unless they assess an important competency for the role.
 - Do not repeat or rephrase similar questions.
+- Vary the phrasing of the questions. Do NOT start all questions with "Can you..." or "Could you...". Use different sentence structures.
 - Do not include numbering.
 - Do not provide answers or explanations.
 - Return only the structured output defined below.

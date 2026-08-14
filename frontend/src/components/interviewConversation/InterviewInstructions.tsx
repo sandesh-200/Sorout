@@ -1,4 +1,3 @@
-// InterviewInstructions.tsx
 import { useState, useEffect, useRef } from "react";
 import {
   Card,
@@ -19,11 +18,12 @@ import {
   Clock,
   Sparkles,
   Radio,
+  Loader2,
 } from "lucide-react";
 
 interface InterviewInstructionsProps {
   title: string;
-  questionCount: number;
+  questionCount?: number;
   durationText: string;
   onCancel: () => void;
   onConfirm: () => Promise<void> | void;
@@ -31,6 +31,7 @@ interface InterviewInstructionsProps {
 
 export default function InterviewInstructions({
   title,
+  questionCount,
   durationText,
   onCancel,
   onConfirm,
@@ -45,16 +46,36 @@ export default function InterviewInstructions({
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
 
+  // Clean up Web Audio resources
+  const stopAudioTracks = () => {
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (audioContextRef.current && audioContextRef.current.state !== "closed") {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
+  };
+
   // Request & Test Microphone
   const requestMicAccess = async () => {
+    stopAudioTracks();
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
       setMicGranted(true);
       setIsTesting(true);
 
-      // Set up Audio Analyser for mic level testing
-      const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const audioCtx = new AudioContextClass();
       const analyser = audioCtx.createAnalyser();
       const source = audioCtx.createMediaStreamSource(stream);
 
@@ -67,7 +88,8 @@ export default function InterviewInstructions({
       const dataArray = new Uint8Array(analyser.frequencyBinCount);
 
       const updateLevel = () => {
-        analyser.getByteFrequencyData(dataArray);
+        if (!analyserRef.current) return;
+        analyserRef.current.getByteFrequencyData(dataArray);
         let sum = 0;
         for (let i = 0; i < dataArray.length; i++) {
           sum += dataArray[i];
@@ -85,129 +107,160 @@ export default function InterviewInstructions({
     }
   };
 
-  // Cleanup Web Audio API streams when leaving the page
   useEffect(() => {
     return () => {
-      if (animationFrameRef.current) cancelAnimationFrame(animationFrameRef.current);
-      if (streamRef.current) streamRef.current.getTracks().forEach((t) => t.stop());
-      if (audioContextRef.current) audioContextRef.current.close();
+      stopAudioTracks();
     };
   }, []);
 
   const handleStart = async () => {
     setIsStarting(true);
-    await onConfirm();
+    try {
+      await onConfirm();
+    } catch (err) {
+      console.error("Failed to start session:", err);
+      setIsStarting(false);
+    }
   };
 
   return (
-    <div className="max-w-3xl mx-auto py-8 px-4 space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-center gap-2 text-primary font-semibold text-sm uppercase tracking-wider">
-            <Sparkles className="h-4 w-4" /> Conversational AI Assessment
+    <div className="max-w-2xl mx-auto py-6 px-4">
+      <Card className="border-border/80 shadow-sm">
+        <CardHeader className="space-y-1.5 pb-6">
+          <div className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
+            <span>AI Voice Assessment</span>
           </div>
-          <CardTitle className="text-2xl mt-1">{title}</CardTitle>
-          <CardDescription>
-            Read the instructions below and verify your audio setup before launching the session.
+          <CardTitle className="text-xl font-semibold tracking-tight">{title}</CardTitle>
+          <CardDescription className="text-xs text-muted-foreground">
+            Verify your audio input and review the session rules before starting.
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          {/* Format Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 border rounded-lg flex items-start gap-3 bg-muted/30">
-              <Clock className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
+        <CardContent className="space-y-6 text-sm">
+          {/* Metadata Bar */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="p-3.5 border rounded-md flex items-center gap-3 bg-muted/20">
+              <Clock className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
               <div>
-                <h4 className="font-medium text-sm">Estimated Duration</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">{durationText}</p>
-              </div>
-            </div>
-            <div className="p-4 border rounded-lg flex items-start gap-3 bg-muted/30">
-              <Radio className="h-5 w-5 text-muted-foreground mt-0.5 shrink-0" />
-              <div>
-                <h4 className="font-medium text-sm">Interaction Type</h4>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Real-time spoken dialogue with an AI interviewer
+                <p className="text-xs font-medium text-foreground">Estimated Duration</p>
+                <p className="text-xs text-muted-foreground">
+                  {durationText} {questionCount ? `• ${questionCount} Questions` : ""}
                 </p>
               </div>
             </div>
+            <div className="p-3.5 border rounded-md flex items-center gap-3 bg-muted/20">
+              <Radio className="h-4 w-4 text-muted-foreground shrink-0" aria-hidden="true" />
+              <div>
+                <p className="text-xs font-medium text-foreground">Interaction Type</p>
+                <p className="text-xs text-muted-foreground">Real-time spoken audio dialogue</p>
+              </div>
+            </div>
           </div>
 
-          {/* Voice Interview Instructions */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-md">How the Voice Session Works</h3>
-            <ul className="space-y-2 text-sm text-muted-foreground list-disc list-inside leading-relaxed">
-              <li>
-                <strong className="text-foreground">AI Speaks First:</strong> The AI will ask a question or introduce a context out loud.
-              </li>
-              <li>
-                <strong className="text-foreground">Automatic Silence Detection:</strong> Once you stop speaking for 1 to 2 seconds, your response is automatically submitted.
-              </li>
-              <li>
-                <strong className="text-foreground">Natural Flow:</strong> Speak naturally as you would in a real interview. You can pause briefly to collect your thoughts.
-              </li>
-              <li>
-                <strong className="text-foreground">Quiet Environment:</strong> Ensure you are in a quiet room to prevent background noise from triggering auto-submit.
-              </li>
-            </ul>
-          </div>
-
-          {/* Microphone Verification & Test Box */}
-          <div className="border rounded-lg p-5 space-y-4 bg-muted/20">
-            <div className="flex items-center justify-between">
+          {/* Audio Setup Section */}
+          <section className="border rounded-md p-4 space-y-3 bg-card" aria-label="Microphone setup">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2">
-                <Volume2 className="h-5 w-5 text-primary" />
-                <h3 className="font-semibold text-sm">Microphone & Audio Setup</h3>
+                <Volume2 className="h-4 w-4 text-foreground" aria-hidden="true" />
+                <h3 className="font-medium text-xs text-foreground">Microphone & Audio Input</h3>
               </div>
               {micGranted && (
-                <span className="flex items-center gap-1 text-xs text-emerald-600 font-medium">
-                  <CheckCircle2 className="h-4 w-4" /> Ready
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> Connected
                 </span>
               )}
             </div>
 
             {micGranted === null && (
-              <div className="flex items-center justify-between gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
                 <p className="text-xs text-muted-foreground">
-                  You need to grant microphone access to participate in this interview.
+                  Microphone access is required for real-time speech evaluation.
                 </p>
-                <Button size="sm" onClick={requestMicAccess} className="shrink-0">
-                  <Mic className="h-4 w-4 mr-2" /> Allow & Test Mic
+                <Button size="sm" onClick={requestMicAccess} className="shrink-0 h-8 text-xs">
+                  <Mic className="h-3.5 w-3.5 mr-1.5" aria-hidden="true" /> Allow & Test Mic
                 </Button>
               </div>
             )}
 
             {micGranted === false && (
-              <Alert variant="destructive">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Microphone Access Denied</AlertTitle>
+              <Alert variant="destructive" className="py-2.5">
+                <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                <AlertTitle className="text-xs font-semibold">Microphone Access Blocked</AlertTitle>
                 <AlertDescription className="text-xs">
-                  Please enable microphone access in your browser settings and refresh this page to proceed.
+                  Please grant microphone permissions in your browser address bar and try again.
                 </AlertDescription>
               </Alert>
             )}
 
             {micGranted === true && isTesting && (
-              <div className="space-y-2 pt-1">
+              <div className="space-y-1.5 pt-1">
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Speak to test input volume:</span>
-                  <span>{audioLevel}%</span>
+                  <span>Speak to test input level:</span>
+                  <span className="font-mono text-xs">{audioLevel}%</span>
                 </div>
-                <Progress value={audioLevel} className="h-2" />
+                <Progress 
+                  value={audioLevel} 
+                  className="h-1.5" 
+                  aria-label="Microphone input volume"
+                  aria-valuenow={audioLevel}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                />
               </div>
             )}
-          </div>
+          </section>
+
+          {/* Instruction List */}
+          <section className="space-y-2.5" aria-label="Session guidelines">
+            <h3 className="font-medium text-xs text-foreground">Session Guidelines</h3>
+            <ul className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+              <li className="flex items-start gap-2">
+                <span className="select-none text-foreground/40">•</span>
+                <span>
+                  <strong className="text-foreground font-medium">Turn-taking dialogue:</strong> The AI interviewer speaks first. Listen to the entire prompt before responding.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="select-none text-foreground/40">•</span>
+                <span>
+                  <strong className="text-foreground font-medium">Automatic turn completion:</strong> Pausing for 1 to 2 seconds of continuous silence submits your answer.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="select-none text-foreground/40">•</span>
+                <span>
+                  <strong className="text-foreground font-medium">Quiet setting recommended:</strong> High background noise may prematurely trigger silence detection.
+                </span>
+              </li>
+            </ul>
+          </section>
         </CardContent>
 
-        <CardFooter className="flex justify-between border-t pt-4">
-          <Button variant="outline" onClick={onCancel} disabled={isStarting}>
+        <CardFooter className="flex items-center justify-between border-t border-border/60 px-6 py-4 bg-muted/10">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={isStarting}
+            className="h-8 text-xs"
+          >
             Cancel
           </Button>
           <Button
+            size="sm"
             onClick={handleStart}
             disabled={!micGranted || isStarting}
+            className="h-8 text-xs min-w-28"
           >
-            {isStarting ? "Starting Session..." : "I'm Ready, Start Interview"}
+            {isStarting ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                Launching...
+              </>
+            ) : (
+              "Start Interview"
+            )}
           </Button>
         </CardFooter>
       </Card>
