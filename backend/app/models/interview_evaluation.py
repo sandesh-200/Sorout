@@ -5,6 +5,7 @@ from sqlalchemy import (
     ForeignKey,
     TIMESTAMP,
     func,
+    String
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship

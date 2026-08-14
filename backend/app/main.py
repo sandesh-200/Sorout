@@ -1,7 +1,5 @@
 import os
 from fastapi import FastAPI,APIRouter
-from core.database import engine
-from models.base import Base
 from core.config import settings
 from utils.rate_limit import limiter
 from slowapi.middleware import SlowAPIMiddleware
@@ -17,7 +15,6 @@ from api.tts import router as tts_router
 from api.health import router as health_router
 from fastapi.middleware.cors import CORSMiddleware
 
-Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
