@@ -26,13 +26,12 @@ def register(data: RegisterRequest, db: Session = Depends(get_db), response: Res
         "role":user.role.value
     })
 
-    # set cookie
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=False, 
-        samesite="lax",
+        secure=True, 
+        samesite="none",
         max_age=60 * 60 * 24
     )
 
