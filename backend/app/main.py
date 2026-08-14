@@ -13,7 +13,7 @@ from api.evaluation import router as evaluation_router
 from api.user import router as user_router
 from api.candidate import router as candidate_router
 from api.conversation import router as conversation_router
-
+from api.tts import router as tts_router
 from fastapi.middleware.cors import CORSMiddleware
 
 Base.metadata.create_all(bind=engine)
@@ -46,6 +46,7 @@ api_router.include_router(interview_router)
 api_router.include_router(interview_session_router)
 api_router.include_router(evaluation_router)
 api_router.include_router(conversation_router)
+api_router.include_router(tts_router)
 
 
 

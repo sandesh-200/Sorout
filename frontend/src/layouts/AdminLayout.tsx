@@ -1,34 +1,27 @@
 import { AppSidebar } from "@/components/sidebar/AppSidebar";
-import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
-import { data } from "@/constants/dashbaord";
-import { Outlet } from "react-router-dom"; // Import Outlet
+import { Navbar } from "@/components/shared/navbar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { data } from "@/constants/dashboard";
+import { useLogout } from "@/hooks/useLogout";
+import { Outlet } from "react-router-dom";
 
 export default function AdminLayout() {
-  return (
-    <SidebarProvider>
-      <AppSidebar groupLabel="Platform" items={data.sidebarItems} user={data.sidebarUser} />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center transition-[width] ease-linear">
-          <div className="flex w-full items-center justify-between px-4">
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="-ml-1" />
-              <Field>
-                <Input id="input-button-group" placeholder="Type to search..." />
-              </Field>
-            </div>
-          </div>
-        </header>
+  const handleLogout = useLogout();
 
-        {/* The matching child page will dynamically mount right here */}
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-          <Outlet /> 
-        </div>
+  return (
+    <SidebarProvider className="h-svh overflow-hidden">
+      <AppSidebar
+        groupLabel="Platform Admin"
+        items={data.sidebarItems}
+        user={data.sidebarUser}
+        onLogout={handleLogout}
+      />
+      <SidebarInset className="flex h-full flex-col overflow-hidden">
+        <Navbar />
+
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <Outlet />
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

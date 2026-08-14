@@ -1,47 +1,4 @@
-// "use client"
-
-// import {
-//   SidebarGroup,
-//   SidebarGroupLabel,
-//   SidebarMenu,
-//   SidebarMenuButton,
-//   SidebarMenuItem,
-// } from "@/components/ui/sidebar"
-
-// export function NavMain({
-//   items,
-// }: {
-//   items: {
-//     title: string
-//     url: string
-//     icon?: React.ReactNode
-//     isActive?: boolean
-//   }[]
-// }) {
-//   return (
-//     <SidebarGroup>
-//       <SidebarGroupLabel>Platform</SidebarGroupLabel>
-//       <SidebarMenu>
-//         {items.map((item) => (
-//           <SidebarMenuItem key={item.title}>
-//             <SidebarMenuButton 
-//               asChild 
-//               tooltip={item.title}
-//               isActive={item.isActive} // Highlights the item if it's currently active
-//             >
-//               <a href={item.url}>
-//                 {item.icon}
-//                 <span>{item.title}</span>
-//               </a>
-//             </SidebarMenuButton>
-//           </SidebarMenuItem>
-//         ))}
-//       </SidebarMenu>
-//     </SidebarGroup>
-//   )
-// }
-
-
+import * as React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
   SidebarGroup,
@@ -51,15 +8,31 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-interface NavItem {
+export interface NavItem {
   title: string;
   url: string;
   icon?: React.ReactNode;
 }
 
-interface GenericNavMainProps {
-  label: string; // Dynamic label like "Platform" or "Candidate Portal"
+export interface GenericNavMainProps {
+  label?: string;
   items: NavItem[];
+}
+
+/**
+ * Checks if a route is currently active.
+ * Handles exact matching for root paths and prefix matching for subroutes.
+ */
+function isRouteActive(currentPath: string, itemUrl: string): boolean {
+  const normalize = (path: string) => path.replace(/\/+$/, "") || "/";
+  const cleanCurrent = normalize(currentPath);
+  const cleanItem = normalize(itemUrl);
+
+  if (cleanItem === "/") {
+    return cleanCurrent === "/";
+  }
+
+  return cleanCurrent === cleanItem || cleanCurrent.startsWith(`${cleanItem}/`);
 }
 
 export function GenericNavMain({ label, items }: GenericNavMainProps) {
@@ -67,10 +40,10 @@ export function GenericNavMain({ label, items }: GenericNavMainProps) {
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      {label && <SidebarGroupLabel>{label}</SidebarGroupLabel>}
       <SidebarMenu>
         {items.map((item) => {
-          const isActive = location.pathname === item.url;
+          const isActive = isRouteActive(location.pathname, item.url);
 
           return (
             <SidebarMenuItem key={item.title}>
@@ -78,10 +51,18 @@ export function GenericNavMain({ label, items }: GenericNavMainProps) {
                 asChild
                 tooltip={item.title}
                 isActive={isActive}
+                className="transition-colors hover:bg-sidebar-accent/60 active:bg-sidebar-accent"
               >
-                <Link to={item.url}>
-                  {item.icon}
-                  <span>{item.title}</span>
+                <Link
+                  to={item.url}
+                  aria-current={isActive ? "page" : undefined}
+                >
+                  {item.icon && (
+                    <span className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-sidebar-foreground group-data-[active=true]:text-sidebar-accent-foreground">
+                      {item.icon}
+                    </span>
+                  )}
+                  <span className="truncate">{item.title}</span>
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>

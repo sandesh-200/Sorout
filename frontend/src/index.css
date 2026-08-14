@@ -19,7 +19,7 @@
   --card-foreground: oklch(0.147 0.004 49.25);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.147 0.004 49.25);
-  --primary: oklch(0.52 0.105 223.128);
+  --primary: oklch(62% 0.063 285.5);
   --primary-foreground: oklch(0.984 0.019 200.873);
   --secondary: oklch(0.967 0.001 286.375);
   --secondary-foreground: oklch(0.21 0.006 285.885);
@@ -39,7 +39,7 @@
   --radius: 0.45rem;
   --sidebar: oklch(0.985 0.001 106.423);
   --sidebar-foreground: oklch(0.147 0.004 49.25);
-  --sidebar-primary: oklch(0.609 0.126 221.723);
+  --sidebar-primary: oklch(62% 0.063 285.5);
   --sidebar-primary-foreground: oklch(0.984 0.019 200.873);
   --sidebar-accent: oklch(0.97 0.001 106.424);
   --sidebar-accent-foreground: oklch(0.216 0.006 56.043);
@@ -83,7 +83,7 @@
   --card-foreground: oklch(0.985 0.001 106.423);
   --popover: oklch(0.216 0.006 56.043);
   --popover-foreground: oklch(0.985 0.001 106.423);
-  --primary: oklch(0.45 0.085 224.283);
+  --primary: oklch(62% 0.063 285.5);
   --primary-foreground: oklch(0.984 0.019 200.873);
   --secondary: oklch(0.274 0.006 286.033);
   --secondary-foreground: oklch(0.985 0 0);
@@ -213,6 +213,25 @@
   --color-sidebar-primary-fg: var(--sidebar-primary-fg);
   --color-sidebar-accent-fg: var(--sidebar-accent-fg);
   --radius: var(----radius);
+
+  --animate-indeterminate-linear: indeterminate-linear 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+
+  @keyframes indeterminate-linear {
+    0% {
+      left: -35%;
+      width: 35%;
+    }
+
+    50% {
+      left: 35%;
+      width: 45%;
+    }
+
+    100% {
+      left: 100%;
+      width: 25%;
+    }
+  }
 }
 
 @layer base {
@@ -289,4 +308,8 @@
 
 .status-completed {
   @apply bg-emerald-100 text-emerald-700 border-emerald-200;
+}
+
+html {
+  scroll-behavior: smooth;
 }
