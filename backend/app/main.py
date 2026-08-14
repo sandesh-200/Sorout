@@ -15,6 +15,7 @@ from api.user import router as user_router
 from api.candidate import router as candidate_router
 from api.conversation import router as conversation_router
 from api.tts import router as tts_router
+from api.health import router as health_router
 from fastapi.middleware.cors import CORSMiddleware
 
 Base.metadata.create_all(bind=engine)
@@ -42,6 +43,7 @@ app.add_exception_handler(RateLimitExceeded,_rate_limit_exceeded_handler)
 api_router = APIRouter(prefix="/api")
 app.include_router(api_router)
 
+api_router.include_router(health_router)
 api_router.include_router(auth_router)
 api_router.include_router(user_router)
 api_router.include_router(candidate_router)
