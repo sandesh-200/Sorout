@@ -47,6 +47,14 @@ class InterviewEvaluation(Base):
         nullable=False,
     )
 
+    # Stores per-question breakdowns from the LLM as JSON,
+    # e.g. [{"question": "...", "answer": "...", "score": 8, "feedback": "..."}]
+    question_evaluations = Column(
+        JSONB,
+        nullable=False,
+        default=list,
+    )
+
     evaluated_at = Column(
         TIMESTAMP(timezone=True),
         server_default=func.now(),
@@ -54,10 +62,4 @@ class InterviewEvaluation(Base):
 
     session = relationship(
         "InterviewSession",
-    )
-
-    question_evaluations = relationship(
-        "QuestionEvaluation",
-        back_populates="interview_evaluation",
-        cascade="all, delete-orphan"
     )

@@ -14,6 +14,7 @@ class InterviewEvaluationRepository:
         strengths: list[str],
         improvements: list[str],
         evaluator_model: str,
+        question_evaluations: list[dict],
     ):
         evaluation = InterviewEvaluation(
             session_id=session_id,
@@ -22,6 +23,7 @@ class InterviewEvaluationRepository:
             strengths=strengths,
             improvements=improvements,
             evaluator_model=evaluator_model,
+            question_evaluations=question_evaluations,
         )
 
         db.add(evaluation)

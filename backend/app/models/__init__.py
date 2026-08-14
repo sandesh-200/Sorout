@@ -4,5 +4,5 @@ from models.interview import Interview
 from models.interview_session import InterviewSession
 from models.question import Question
 from models.interview_question import InterviewQuestion
-from models.answer import Answer
 from models.interview_evaluation import InterviewEvaluation
+from models.conversation_message import ConversationMessage
