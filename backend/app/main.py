@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI,APIRouter
 from core.database import engine
 from models.base import Base
@@ -24,9 +25,11 @@ app.state.limiter = limiter
 app.add_middleware(SlowAPIMiddleware)
 
 origins = [
-    "http://localhost:5173",
-    "http://localhost:3000",
+ "http://localhost:5173",
+"http://localhost:3000",
+os.getenv("FRONTEND_URL", "https://your-frontend-placeholder.vercel.app")
 ]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,          
