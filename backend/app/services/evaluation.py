@@ -1,17 +1,13 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from schemas.evaluation import QuestionEvaluationResponse,InterviewEvaluationResponse
+from schemas.evaluation import QuestionEvaluationResponse, InterviewEvaluationResponse
 
 from ai.chains.interview_evaluator import InterviewEvaluator
-from repositories.answer_repository import AnswerRepository
 from repositories.interview_evaluation_repository import (
     InterviewEvaluationRepository,
 )
 from repositories.interview_session_repository import (
     InterviewSessionRepository,
-)
-from repositories.question_evaluation_repository import (
-    QuestionEvaluationRepository,
 )
 from services.evaluation_context import EvaluationContextService
 from repositories.conversation_repository import ConversationRepository
@@ -35,8 +31,6 @@ class EvaluationService:
         
         if session.status != InterviewSessionStatus.completed:
             raise ValueError("interview must be completed before the evaluation")
-        
-        answers = AnswerRepository.get_by_session(db,session.id,)
 
         messages = ConversationRepository.get_by_session(
     db,
@@ -45,7 +39,6 @@ class EvaluationService:
 
         context = EvaluationContextService.build(
     interview=session.interview,
-    answers=answers,
     messages=messages,
 )
 
@@ -59,6 +52,17 @@ class EvaluationService:
 
         result = InterviewEvaluator.evaluate(**context)
 
+        # Convert LLM per-question results to plain dicts for JSONB storage
+        question_evaluations = [
+            {
+                "question": e.question,
+                "answer": e.answer,
+                "score": e.score,
+                "feedback": e.feedback,
+            }
+            for e in result.evaluations
+        ]
+
         interview_evaluation = (
             InterviewEvaluationRepository.create(
                 db=db,
@@ -68,27 +72,8 @@ class EvaluationService:
                 strengths=result.strengths,
                 improvements=result.improvements,
                 evaluator_model="meta-llama/Llama-3.1-8B-Instruct",
+                question_evaluations=question_evaluations,
             )
-        )
-
-        question_evaluations = []
-
-        for answer,evaluation in zip(
-            answers,
-            result.evaluations
-        ):
-            question_evaluations.append(
-                {
-            "answer_id": answer.id,
-            "score": evaluation.score,
-            "feedback": evaluation.feedback,
-                }
-            )
-        
-        QuestionEvaluationRepository.create_many(
-            db=db,
-            interview_evaluation_id=interview_evaluation.id,
-            evaluations=question_evaluations
         )
 
         session.status = InterviewSessionStatus.evaluated
@@ -137,24 +122,16 @@ class EvaluationService:
                 detail="Evaluation not found"
             )
         
-        question_evaluations = (
-            QuestionEvaluationRepository.get_by_interview_evaluation(
-                db,
-                evaluation.id
+        # question_evaluations is a JSONB list stored directly on the evaluation row
+        questions = [
+            QuestionEvaluationResponse(
+                question=item["question"],
+                answer=item["answer"],
+                score=item["score"],
+                feedback=item["feedback"],
             )
-        )
-
-        questions = []
-
-        for item in question_evaluations:
-            questions.append(
-                QuestionEvaluationResponse(
-            question=item.answer.question.question_text,
-            answer=item.answer.answer_text,
-            score=item.score,
-            feedback=item.feedback
-                )
-            )
+            for item in (evaluation.question_evaluations or [])
+        ]
         
         return InterviewEvaluationResponse(
     overall_score=evaluation.overall_score,
