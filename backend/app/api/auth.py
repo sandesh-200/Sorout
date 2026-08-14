@@ -55,10 +55,11 @@ def login(data: LoginRequest, db: Session = Depends(get_db), response: Response 
         key="access_token",
         value=token,
         httponly=True,
-        secure=False,
-        samesite="lax",
+        secure=True,
+        samesite="none",
         max_age=60 * 60 * 24
     )
+
 
     return {"message": "Login successful"}
 
