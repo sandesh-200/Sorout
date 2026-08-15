@@ -1,11 +1,15 @@
-# api/users.py
+from typing import List
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
 from models.user import User
-from schemas.user import UserOnboardingRequest, UserResponse
-from services.user import UserService, get_current_user
+from schemas.user import CandidateResponse, UserOnboardingRequest, UserResponse
+from services.user import (
+    UserService,
+    admin_required,
+    get_current_user,
+)
 from utils.security import create_access_token
 
 router = APIRouter(
@@ -46,3 +50,29 @@ def complete_onboarding(
     )
 
     return updated_user
+
+
+@router.get(
+    "/candidates",
+    response_model=List[CandidateResponse],
+)
+def get_candidates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+    return UserService.get_all_candidates(db)
+
+
+@router.get(
+    "/available-candidates/{interview_id}",
+    response_model=List[CandidateResponse],
+)
+def get_available_candidates(
+    interview_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(admin_required),
+):
+    return UserService.get_available_candidates(
+        db=db,
+        interview_id=interview_id,
+    )
