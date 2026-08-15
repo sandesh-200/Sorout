@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Enum, TIMESTAMP, func
+from sqlalchemy import Column, Integer, String, Enum,Boolean, TIMESTAMP, func
 from models.base import Base
 import enum
 
@@ -17,6 +17,7 @@ class User(Base):
     password_hash = Column(String(255), nullable=False)
 
     role = Column(Enum(UserRole), nullable=False, default=UserRole.candidate)
+    is_onboarded = Column(Boolean,nullable=False,default=False)
 
     created_at = Column(
         TIMESTAMP(timezone=True),

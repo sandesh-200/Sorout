@@ -1,8 +1,8 @@
 from pydantic import BaseModel, EmailStr
+from models.user import UserRole
 
 
 class RegisterRequest(BaseModel):
-    name: str
     email: EmailStr
     password: str
     send_verification: bool = False
@@ -11,3 +11,14 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
+class UserAuthResponse(BaseModel):
+    id: int
+    name: str | None = None
+    email: EmailStr
+    role: UserRole
+    is_onboarded: bool
+
+    model_config = {
+        "from_attributes": True
+    }

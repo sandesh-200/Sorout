@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from core.database import get_db
 from utils.security import verify_password, create_access_token
-from schemas.auth import RegisterRequest, LoginRequest
+from schemas.auth import RegisterRequest, LoginRequest,UserAuthResponse
 from services.user import UserService
 from models.user import User
 from services.user import get_current_user
@@ -18,7 +18,7 @@ def register(data: RegisterRequest, db: Session = Depends(get_db), response: Res
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    user = UserService.create_user(db, data.name, data.email, data.password)
+    user = UserService.create_user(db, data.email, data.password)
 
     token = create_access_token({
         "user_id": user.id,
@@ -64,16 +64,9 @@ def login(data: LoginRequest, db: Session = Depends(get_db), response: Response 
     return {"message": "Login successful"}
 
 
-@router.get("/me")
-def get_me(
-    current_user: User = Depends(get_current_user)
-):
-    return {
-        "id": current_user.id,
-        "name": current_user.name,
-        "email": current_user.email,
-        "role": current_user.role.value
-    }
+@router.get("/me", response_model=UserAuthResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
 
 
 @router.post("/logout")

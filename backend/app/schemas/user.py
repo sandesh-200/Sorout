@@ -1,4 +1,5 @@
-from pydantic import BaseModel
+from pydantic import BaseModel,Field
+from models.user import UserRole
 
 
 class CandidateResponse(BaseModel):
@@ -9,3 +10,21 @@ class CandidateResponse(BaseModel):
     model_config = {
         "from_attributes": True
     }
+
+class UserResponse(BaseModel):
+    id: int
+    name: str | None = None
+    email: str
+    role: UserRole
+    is_onboarded: bool
+
+    model_config = {
+        "from_attributes": True
+    }
+
+class UserOnboardingRequest(BaseModel):
+    role: UserRole
+    displayName: str = Field(..., min_length=1, max_length=100)
+
+    class Config:
+        from_attributes = True
