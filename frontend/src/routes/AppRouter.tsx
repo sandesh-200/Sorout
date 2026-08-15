@@ -13,6 +13,7 @@ import InterviewInstructionsPage from "@/pages/candidate/InterviewInstructionsPa
 import InterviewResultPage from "@/pages/candidate/InterviewResultPage";
 import ConversationalWorkspace from "@/pages/candidate/ConversationalWorkspace";
 import LandingPage from "@/pages/marketing/LandingPage";
+import { OnboardingPage } from "@/pages/OnboardingPage";
 
 const AnalyticsPage = () => (
 	<div className="space-y-2">
@@ -42,6 +43,15 @@ export default function AppRouter() {
 			<Route path="/login" element={<LoginPage />} />
 			<Route path="/signup" element={<SignupPage />} />
 			<Route path="/unauthorized" element={<UnauthorizedPage />} />
+
+			<Route
+                path="/onboarding"
+                element={
+                    <ProtectedRoute>
+                        <OnboardingPage />
+                    </ProtectedRoute>
+                }
+            />
 
 			{/* ---------------- ADMIN ---------------- */}
 			<Route

@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { registerFormSchema, type RegisterFormData } from "@/types/auth"
+import { registerFormSchema, type RegisterFormData, type RegisterRequest } from "@/types/auth"
 import { registerUser } from "@/api/auth"
 import { Eye, EyeOff } from "lucide-react"
 
@@ -15,12 +15,14 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Link, useNavigate } from "react-router-dom"
+import { useAuth } from '@/context/AuthContext'
 
 export function SignupForm({
   className,
   ...props
 }: React.ComponentProps<"form">) {
   const navigate = useNavigate()
+  const { fetchUser } = useAuth()
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -32,25 +34,20 @@ export function SignupForm({
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      name: "",
       email: "",
       password: "",
       confirmPassword: "",
     },
   })
 
-  const onSubmit = async (data: RegisterFormData) => {
+const onSubmit = async (data: RegisterRequest) => {
     try {
-      const { confirmPassword, ...backendPayload } = data
-      await registerUser(backendPayload)
-      navigate("/login")
+      await registerUser(data)
+      await fetchUser()
+      navigate("/onboarding", { replace: true })
     } catch (error: any) {
-      console.error("Signup error:", error)
       const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Could not create your account. Please try again."
-
+        error?.response?.data?.detail || "Registration failed. Please try again."
       setError("root", { message: errorMessage })
     }
   }
@@ -79,26 +76,6 @@ export function SignupForm({
             {errors.root.message}
           </div>
         )}
-
-        {/* FULL NAME */}
-        <Field className="gap-1.5">
-          <FieldLabel htmlFor="name" className="text-xs">Full Name</FieldLabel>
-          <Input
-            id="name"
-            type="text"
-            placeholder="Jane Doe"
-            autoComplete="name"
-            aria-invalid={!!errors.name}
-            aria-describedby={errors.name ? "name-error" : undefined}
-            className="bg-background h-9 text-sm"
-            {...register("name")}
-          />
-          {errors.name && (
-            <p id="name-error" className="text-destructive text-xs font-medium mt-0.5">
-              {errors.name.message}
-            </p>
-          )}
-        </Field>
 
         {/* EMAIL */}
         <Field className="gap-1.5">
