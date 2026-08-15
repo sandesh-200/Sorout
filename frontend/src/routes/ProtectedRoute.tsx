@@ -4,7 +4,7 @@ import { LoadingAnimation } from "@/components/shared/loading-animation";
 
 interface ProtectedRouteProps {
   children: React.JSX.Element;
-  allowedRoles?: ("admin" | "candidate")[]; // Optional: filter access by role
+  allowedRoles?: ("admin" | "candidate")[];
 }
 
 export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
@@ -18,6 +18,19 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
   if (!user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+if (!user.is_onboarded && location.pathname !== "/onboarding") {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+if (user.is_onboarded && location.pathname === "/onboarding") {
+    return (
+      <Navigate
+        to={user.role === "admin" ? "/admin/dashboard" : "/candidate/interviews"}
+        replace
+      />
+    );
   }
 
 if (

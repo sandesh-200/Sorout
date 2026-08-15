@@ -2,7 +2,6 @@ import { z } from "zod";
 import { type ReactNode } from "react";
 
 export const registerFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.email("Invalid email address"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(1, "Confirm password is required"),
@@ -28,9 +27,10 @@ export interface AuthResponse {
 
 export interface GetMeResponse {
   id: number;
-  name: string;
+  name: string | null;
   email: string;
-  role: "admin" | "candidate"; 
+  role: "admin" | "candidate";
+  is_onboarded: boolean;
 }
 
 export interface AuthContextType {
