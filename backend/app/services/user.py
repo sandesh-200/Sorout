@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 
 from models.user import User
-
+from schemas.user import UserOnboardingRequest
 from repositories.user_repository import UserRepository
 
 from utils.security import (
@@ -28,9 +28,9 @@ class UserService:
     @staticmethod
     def create_user(
         db: Session,
-        name: str,
         email: str,
         password: str,
+        name: str = "",
     ):
         user = User(
             name=name,
@@ -64,6 +64,21 @@ class UserService:
         )
 
 
+    @staticmethod
+    def complete_onboarding(
+        db: Session,
+        user: User,
+        payload: UserOnboardingRequest,
+    ) -> User:
+        updated_user = UserRepository.complete_onboarding(
+            db=db,
+            user=user,
+            role=payload.role,
+            name=payload.displayName,
+        )
+        db.commit()
+        db.refresh(updated_user)
+        return updated_user
 
 def get_current_user(
     request: Request,
@@ -90,18 +105,17 @@ def get_current_user(
 
 
 def admin_required(current_user: User = Depends(get_current_user)):
-    role = getattr(current_user, "jwt_role", current_user.role.value)
-
-    if role != "admin":
+    # Always check the actual database model role, not the stale JWT claim
+    if current_user.role.value != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
 
     return current_user
 
 
 def candidate_required(current_user: User = Depends(get_current_user)):
-    role = getattr(current_user, "jwt_role", current_user.role.value)
-
-    if role != "candidate":
-        raise HTTPException(status_code=403, detail="Candidate access required")
+    if current_user.role.value != "candidate":
+        raise HTTPException(
+            status_code=403, detail="Candidate access required"
+        )
 
     return current_user

@@ -83,3 +83,17 @@ class UserRepository:
             .order_by(User.name.asc())
             .all()
         )
+
+    @staticmethod
+    def complete_onboarding(
+        db: Session,
+        user: User,
+        role: UserRole,
+        name: str,
+    )->User:
+        user.role = role
+        user.name = name
+        user.is_onboarded = True
+        db.add(user)
+        db.flush()
+        return user
