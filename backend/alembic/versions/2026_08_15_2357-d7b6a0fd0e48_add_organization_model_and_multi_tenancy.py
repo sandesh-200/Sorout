@@ -28,9 +28,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_organizations_id'), 'organizations', ['id'], unique=False)
-    op.alter_column('interviews', 'organization_id',
-               existing_type=sa.INTEGER(),
-               nullable=True)
+    op.add_column('interviews', sa.Column('organization_id', sa.Integer(), nullable=True))
+    op.add_column('users', sa.Column('organization_id', sa.Integer(), nullable=True))
 
     # DATA MIGRATION: Create default orgs and assign users/interviews
     bind = op.get_bind()
@@ -78,9 +77,8 @@ def downgrade() -> None:
     op.create_index(op.f('ix_users_organization_id'), 'users', ['organization_id'], unique=False)
     op.drop_constraint(None, 'interviews', type_='foreignkey')
     op.create_index(op.f('ix_interviews_organization_id'), 'interviews', ['organization_id'], unique=False)
-    op.alter_column('interviews', 'organization_id',
-               existing_type=sa.INTEGER(),
-               nullable=False)
+    op.drop_column('interviews', 'organization_id')
+    op.drop_column('users', 'organization_id')
     op.drop_index(op.f('ix_organizations_id'), table_name='organizations')
     op.drop_table('organizations')
     # ### end Alembic commands ###
