@@ -49,23 +49,23 @@ export const OnboardingPage: React.FC = () => {
     <>
       <OnboardingFlow onComplete={handleComplete} isSubmitting={submitting} />
 
-<StatusModal
-  open={showSuccessModal}
-  variant="success"
-  title={
-    completedData?.role === "admin"
-      ? "Your Workspace is Ready"
-      : `Welcome, ${completedData?.displayName}`
-  }
-  description={
-    completedData?.role === "admin"
-      ? `'${completedData.displayName}' has been successfully configured. Head over to your dashboard to manage candidates and schedule interview sessions.`
-      : "Your setup is complete. Head over to your candidate portal to view pending interview invitations and upcoming assessments."
-  }
-  primaryCtaLabel="Go to Dashboard"
-  onPrimaryAction={handleNavigateDashboard}
-  onDismiss={handleNavigateDashboard}
-/>
+      <StatusModal
+        open={showSuccessModal}
+        variant="success"
+        title={
+          completedData?.role === "admin"
+            ? "Your Workspace is Ready"
+            : `Welcome, ${completedData?.user_name}`
+        }
+        description={
+          completedData?.role === "admin"
+            ? `'${completedData.organization_name}' has been successfully configured. Head over to your dashboard to manage candidates and schedule interview sessions.`
+            : "Your setup is complete. Head over to your candidate portal to view pending interview invitations and upcoming assessments."
+        }
+        primaryCtaLabel="Go to Dashboard"
+        onPrimaryAction={handleNavigateDashboard}
+        onDismiss={handleNavigateDashboard}
+      />
     </>
   );
 };
