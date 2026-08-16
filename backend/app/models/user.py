@@ -17,7 +17,7 @@ class User(Base):
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
 
-    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True,index=True)
     organization = relationship("Organization", back_populates="users")
 
     role = Column(Enum(UserRole), nullable=False, default=UserRole.candidate)
