@@ -1,0 +1,25 @@
+{
+  "name": "ai_interview_system",
+  "version": "1.0.0",
+  "description": "A full-stack web application that automates the technical interview process. Admins create and configure interviews; candidates complete them through either a structured question-answer flow or a live voice-driven conversational session powered by a large language model. At the end of each session, the system evaluates responses and generates a structured performance report.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sandesh-200/ai_interview_system.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/sandesh-200/ai_interview_system/issues"
+  },
+  "homepage": "https://github.com/sandesh-200/ai_interview_system#readme",
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}
