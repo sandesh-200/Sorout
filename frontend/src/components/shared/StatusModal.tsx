@@ -139,15 +139,17 @@ export const StatusModal: React.FC<StatusModalProps> = ({
   // Icon Resolver
   const renderIcon = () => {
     if (customIcon) {
-      if (typeof customIcon === "function" || typeof (customIcon as any)?.render === "function") {
-        const IconComponent = customIcon as LucideIcon;
-        return <IconComponent className="h-6 w-6 stroke-[2.5]" />;
+      if (typeof customIcon === "function") {
+        const IconComponent = customIcon as LucideIcon
+        return <IconComponent className="h-6 w-6 stroke-[2.5]" />
       }
-      return customIcon;
+
+      return customIcon
     }
-    const IconComponent = config.icon;
-    return <IconComponent className="h-6 w-6 stroke-[2.5]" />;
-  };
+
+    const IconComponent = config.icon
+    return <IconComponent className="h-6 w-6 stroke-[2.5]" />
+  }
 
   return (
     <AnimatePresence>

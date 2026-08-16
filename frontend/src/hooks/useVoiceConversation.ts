@@ -17,7 +17,7 @@ export function useVoiceConversation({
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
 
-  const recognitionRef = useRef<any>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestTranscriptRef = useRef("");
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -79,7 +79,7 @@ export function useVoiceConversation({
 
   useEffect(() => {
     const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       setIsSupported(false);
@@ -95,7 +95,7 @@ export function useVoiceConversation({
       setIsListening(true);
     };
 
-    recognition.onresult = (event: any) => {
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
       let currentTranscript = "";
       for (let i = 0; i < event.results.length; i++) {
         currentTranscript += event.results[i][0].transcript;
@@ -117,7 +117,7 @@ export function useVoiceConversation({
       }, 1800);
     };
 
-    recognition.onerror = (event: any) => {
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
       if (event.error === "aborted" || event.error === "no-speech") {
         return;
       }
@@ -165,9 +165,9 @@ export function useVoiceConversation({
       try {
         setTranscript("");
         recognitionRef.current.start();
-      } catch (err: any) {
-        if (err.name !== "InvalidStateError") {
-          console.error("[Voice] Failed to start recognition:", err);
+      } catch (error: unknown) {
+        if (error instanceof DOMException && error.name !== "InvalidStateError") {
+          console.error("[Voice] Failed to start recognition:", error);
         }
       }
     }

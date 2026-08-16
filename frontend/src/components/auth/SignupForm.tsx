@@ -15,7 +15,8 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Link, useNavigate } from "react-router-dom"
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/hooks/useAuth'
+import { getApiErrorMessage } from "@/utils/api-error"
 
 export function SignupForm({
   className,
@@ -40,15 +41,18 @@ export function SignupForm({
     },
   })
 
-const onSubmit = async (data: RegisterRequest) => {
+  const onSubmit = async (data: RegisterRequest) => {
     try {
       await registerUser(data)
       await fetchUser()
       navigate("/onboarding", { replace: true })
-    } catch (error: any) {
-      const errorMessage =
-        error?.response?.data?.detail || "Registration failed. Please try again."
-      setError("root", { message: errorMessage })
+    } catch (error: unknown) {
+      setError("root", {
+        message: getApiErrorMessage(
+          error,
+          "Registration failed. Please try again."
+        ),
+      })
     }
   }
 

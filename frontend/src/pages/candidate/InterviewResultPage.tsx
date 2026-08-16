@@ -4,6 +4,8 @@ import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import axios from "axios";
+import { getApiErrorMessage } from "@/utils/api-error";
 import {
   Loader2,
   CheckCircle2,
@@ -71,13 +73,15 @@ export default function InterviewResultPage() {
       setResult(res.data);
       setProcessing(false);
       setLoading(false);
-    } catch (err: any) {
-      if (err?.response?.status === 404) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
         // Evaluation not ready yet — show processing screen and poll
         setProcessing(true);
         setLoading(false);
       } else {
-        setError(err?.response?.data?.detail ?? "Failed to load results.");
+        setError(
+          getApiErrorMessage(error, "Failed to load results.")
+        );
         setLoading(false);
       }
     }

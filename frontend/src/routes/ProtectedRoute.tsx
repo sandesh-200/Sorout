@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from "@/hooks/useAuth";
 import { LoadingAnimation } from "@/components/shared/loading-animation";
 
 interface ProtectedRouteProps {
@@ -12,7 +12,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const location = useLocation();
   if (loading) {
     return (
-      <LoadingAnimation text="Loading Session..."/>
+      <LoadingAnimation text="Loading Session..." />
     );
   }
 
@@ -20,11 +20,11 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-if (!user.is_onboarded && location.pathname !== "/onboarding") {
+  if (!user.is_onboarded && location.pathname !== "/onboarding") {
     return <Navigate to="/onboarding" replace />;
   }
 
-if (user.is_onboarded && location.pathname === "/onboarding") {
+  if (user.is_onboarded && location.pathname === "/onboarding") {
     return (
       <Navigate
         to={user.role === "admin" ? "/admin/dashboard" : "/candidate/interviews"}
@@ -33,21 +33,21 @@ if (user.is_onboarded && location.pathname === "/onboarding") {
     );
   }
 
-if (
-  allowedRoles &&
-  !allowedRoles.includes(user.role)
-) {
-  return (
-    <Navigate
-      to={
-        user.role === "admin"
-          ? "/admin/dashboard"
-          : "/candidate/interviews"
-      }
-      replace
-    />
-  );
-}
+  if (
+    allowedRoles &&
+    !allowedRoles.includes(user.role)
+  ) {
+    return (
+      <Navigate
+        to={
+          user.role === "admin"
+            ? "/admin/dashboard"
+            : "/candidate/interviews"
+        }
+        replace
+      />
+    );
+  }
 
   return children;
 }
