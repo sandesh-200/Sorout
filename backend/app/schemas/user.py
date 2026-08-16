@@ -24,7 +24,8 @@ class UserResponse(BaseModel):
 
 class UserOnboardingRequest(BaseModel):
     role: UserRole
-    displayName: str = Field(..., min_length=1, max_length=100)
+    user_name: str = Field(..., min_length=1, max_length=100)
+    organization_name: str | None = Field(None, min_length=1, max_length=100)
 
     class Config:
         from_attributes = True

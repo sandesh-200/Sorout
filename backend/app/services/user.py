@@ -50,17 +50,20 @@ class UserService:
     @staticmethod
     def get_all_candidates(
         db: Session,
+        organization_id: int,
     ):
-        return UserRepository.get_all_candidates(db)
+        return UserRepository.get_all_candidates(db=db, organization_id=organization_id)
     
     @staticmethod
     def get_available_candidates(
         db: Session,
         interview_id: int,
+        organization_id: int,
     ):
         return UserRepository.get_available_candidates(
             db=db,
             interview_id=interview_id,
+            organization_id=organization_id,
         )
 
 
@@ -74,7 +77,8 @@ class UserService:
             db=db,
             user=user,
             role=payload.role,
-            name=payload.displayName,
+            name=payload.user_name,
+            organization_name=payload.organization_name,
         )
         db.commit()
         db.refresh(updated_user)

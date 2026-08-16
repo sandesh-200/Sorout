@@ -13,18 +13,27 @@ class InterviewRepository:
         return interview
     
     @staticmethod
-    def get_all(db:Session):
+    def get_all(db:Session, organization_id: int):
         return (
-            db.query(Interview).order_by(Interview.created_at.desc()).all()
+            db.query(Interview)
+            .filter(Interview.organization_id == organization_id)
+            .order_by(Interview.created_at.desc())
+            .all()
         )
     
     @staticmethod
     def get_by_id(
         db:Session,
-        interview_id:int
+        interview_id:int,
+        organization_id:int
     ):
         return(
-            db.query(Interview).filter(Interview.id == interview_id).first()
+            db.query(Interview)
+            .filter(
+                Interview.id == interview_id,
+                Interview.organization_id == organization_id
+            )
+            .first()
         )
 
     @staticmethod

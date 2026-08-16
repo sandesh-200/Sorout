@@ -4,7 +4,8 @@ export type UserRole = "admin" | "candidate";
 
 export interface UserOnboardingPayload {
   role: UserRole;
-  displayName: string;
+  user_name: string;
+  organization_name?: string;
 }
 
 export interface UserState {

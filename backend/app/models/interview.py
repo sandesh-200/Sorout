@@ -24,6 +24,7 @@ class Interview(Base):
     status = Column(Enum(InterviewStatus), default=InterviewStatus.draft)
 
     created_by = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"))
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
 
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
 

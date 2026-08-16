@@ -32,6 +32,7 @@ def create_interview(
         db=db,
         data=data,
         admin_id=current_user.id,
+        organization_id=current_user.organization_id,
     )
 
 @router.get("",response_model=List[InterviewResponse])
@@ -39,7 +40,7 @@ def get_all_interviews(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
-    return InterviewService.get_all_interviews(db)
+    return InterviewService.get_all_interviews(db=db, organization_id=current_user.organization_id)
 
 @router.get("/{interview_id}", response_model=InterviewResponse)
 def get_interview(
@@ -50,6 +51,7 @@ def get_interview(
     return InterviewService.get_interview(
         db=db,
         interview_id=interview_id,
+        organization_id=current_user.organization_id,
     )
 
 @router.patch("/{interview_id}",response_model=InterviewResponse)
@@ -63,6 +65,7 @@ def update_interview(
         db=db,
         interview_id=interview_id,
         data=data,
+        organization_id=current_user.organization_id,
     )
 
 @router.delete("/{interview_id}",status_code=status.HTTP_204_NO_CONTENT)
@@ -74,6 +77,7 @@ def delete_interview(
     InterviewService.delete_interview(
         db=db,
         interview_id=interview_id,
+        organization_id=current_user.organization_id,
     )
 
 @router.post(
@@ -88,6 +92,7 @@ def generate_questions(
     return InterviewService.generate_questions(
         db=db,
         interview_id=interview_id,
+        organization_id=current_user.organization_id,
     )
 
 @router.get(
@@ -102,6 +107,7 @@ def get_interview_questions(
     return InterviewService.get_interview_questions(
         db=db,
         interview_id=interview_id,
+        organization_id=current_user.organization_id,
     )
 
 @router.post(
@@ -118,4 +124,5 @@ def assign_candidates(
         db=db,
         interview_id=interview_id,
         candidate_ids=data.candidate_ids,
+        organization_id=current_user.organization_id,
     )

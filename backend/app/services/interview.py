@@ -15,7 +15,8 @@ class InterviewService:
     def create_interview(
         db:Session,
         data:InterviewCreate,
-        admin_id:int
+        admin_id:int,
+        organization_id:int,
     ):
          return InterviewRepository.create(
             db=db,
@@ -25,17 +26,20 @@ class InterviewService:
             max_questions=data.max_questions,
             status=InterviewStatus.draft,
             created_by=admin_id,
+            organization_id=organization_id,
         )
     
     @staticmethod
-    def get_all_interviews(db:Session):
-         return InterviewRepository.get_all(db)
+    def get_all_interviews(db:Session, organization_id:int):
+         return InterviewRepository.get_all(db, organization_id=organization_id)
     
     @staticmethod
     def get_interview(
         db:Session,
-        interview_id:int):
-            interview = InterviewRepository.get_by_id(db,interview_id)
+        interview_id:int,
+        organization_id:int,
+    ):
+            interview = InterviewRepository.get_by_id(db,interview_id, organization_id=organization_id)
 
             if not interview:
               raise HTTPException(
@@ -47,8 +51,8 @@ class InterviewService:
 
     @staticmethod
     def update_interview(
-        db: Session,interview_id: int,data: InterviewUpdate):
-            interview = InterviewRepository.get_by_id(db,interview_id,)
+        db: Session,interview_id: int,data: InterviewUpdate, organization_id: int):
+            interview = InterviewRepository.get_by_id(db,interview_id, organization_id=organization_id)
 
             if not interview:
                 raise HTTPException(
@@ -67,10 +71,12 @@ class InterviewService:
     @staticmethod
     def delete_interview(
     db: Session,
-    interview_id: int):
+    interview_id: int,
+    organization_id: int):
         interview = InterviewRepository.get_by_id(
         db,
-        interview_id)
+        interview_id,
+        organization_id=organization_id)
 
         if not interview:
             raise HTTPException(
@@ -92,10 +98,12 @@ class InterviewService:
     def generate_questions(
     db: Session,
     interview_id: int,
+    organization_id: int,
 ):
         interview = InterviewRepository.get_by_id(
         db,
         interview_id,
+        organization_id=organization_id
     )
 
         if not interview:
@@ -162,10 +170,12 @@ class InterviewService:
     def get_interview_questions(
         db: Session,
         interview_id: int,
+        organization_id: int,
     ):
         interview = InterviewRepository.get_by_id(
             db,
             interview_id,
+            organization_id=organization_id
         )
 
         if not interview:
@@ -194,11 +204,13 @@ class InterviewService:
         db: Session,
         interview_id: int,
         candidate_ids: list[int],
+        organization_id: int,
     ):
         # Check interview exists
         interview = InterviewRepository.get_by_id(
             db,
             interview_id,
+            organization_id=organization_id
         )
 
         if not interview:
@@ -232,6 +244,7 @@ class InterviewService:
         candidates = UserRepository.get_candidates_by_ids(
             db=db,
             candidate_ids=candidate_ids,
+            organization_id=organization_id,
         )
 
         if len(candidates) != len(candidate_ids):

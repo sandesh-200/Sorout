@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, Enum,Boolean, TIMESTAMP, func
+from sqlalchemy import Column, Integer, String, Enum,Boolean, TIMESTAMP, func, ForeignKey
+from sqlalchemy.orm import relationship
 from models.base import Base
 import enum
 
@@ -15,6 +16,9 @@ class User(Base):
     name = Column(String(100), nullable=False)
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
+
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=True)
+    organization = relationship("Organization", back_populates="users")
 
     role = Column(Enum(UserRole), nullable=False, default=UserRole.candidate)
     is_onboarded = Column(Boolean,nullable=False,default=False)
