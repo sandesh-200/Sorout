@@ -8,12 +8,10 @@ export interface ConversationMessage {
   created_at: string;
 }
 
-export interface ConversationStartResponse
-  extends ConversationMessage {}
+export type ConversationStartResponse = ConversationMessage;
 
 export interface ConversationMessageResponse {
   message: ConversationMessage;
-
   completed: boolean;
 }
 

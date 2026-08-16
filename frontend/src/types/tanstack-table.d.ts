@@ -1,8 +1,8 @@
 import "@tanstack/react-table";
 import type { Interview } from "@/features/interview/interviewTypes";
 
-// This declaration merges your custom methods directly into TanStack's internal type engine
 declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface TableMeta<TData extends RowData> {
     generatingId: number | null;
     onEditRow?: (interview: Interview) => void;

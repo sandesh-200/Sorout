@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema, type LoginRequest } from "@/types/auth"
 import { loginUser } from "@/api/auth"
-import { useAuth } from "@/context/AuthContext"
+import { useAuth } from "@/hooks/useAuth"
 import { Eye, EyeOff } from "lucide-react"
 
 import { cn } from "@/lib/utils"
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
 import { Link, useNavigate } from "react-router-dom"
+import { getApiErrorMessage } from '@/utils/api-error'
 
 export function LoginForm({
   className,
@@ -55,14 +56,15 @@ export function LoginForm({
       } else {
         navigate("/candidate/interviews", { replace: true })
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Login error:", error)
-      const errorMessage =
-        error?.response?.data?.message ||
-        error?.message ||
-        "Invalid email or password. Please try again."
 
-      setError("root", { message: errorMessage })
+      setError("root", {
+        message: getApiErrorMessage(
+          error,
+          "Invalid email or password. Please try again."
+        ),
+      })
     }
   }
 
