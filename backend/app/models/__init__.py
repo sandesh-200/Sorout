@@ -1,4 +1,5 @@
 from models.base import Base
+from models.organization import Organization
 from models.user import User
 from models.interview import Interview
 from models.interview_session import InterviewSession

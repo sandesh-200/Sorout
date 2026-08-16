@@ -15,7 +15,8 @@ export type UserRoleType = "admin" | "candidate";
 
 export interface OnboardingData {
   role: UserRoleType;
-  displayName: string;
+  user_name: string;
+  organization_name?: string;
 }
 
 interface OnboardingFlowProps {
@@ -52,7 +53,8 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   const [step, setStep] = useState<1 | 2>(1);
   const [direction, setDirection] = useState<number>(1);
   const [selectedRole, setSelectedRole] = useState<UserRoleType | null>(null);
-  const [displayName, setDisplayName] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
+  const [organizationName, setOrganizationName] = useState<string>("");
   const [inputError, setInputError] = useState<string>("");
 
   const handleRoleSelect = (role: UserRoleType) => {
@@ -75,19 +77,21 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim()) {
-      setInputError(
-        selectedRole === "admin"
-          ? "Please enter your organization name"
-          : "Please enter your full name"
-      );
+    if (!userName.trim()) {
+      setInputError("Please enter your full name");
       return;
     }
+    if (selectedRole === "admin" && !organizationName.trim()) {
+      setInputError("Please enter your organization name");
+      return;
+    }
+
     if (selectedRole) {
       setInputError("");
       onComplete({
         role: selectedRole,
-        displayName: displayName.trim(),
+        user_name: userName.trim(),
+        ...(selectedRole === "admin" ? { organization_name: organizationName.trim() } : {}),
       });
     }
   };
@@ -239,39 +243,72 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     </p>
                   </div>
 
-                  <form id="onboarding-form" onSubmit={handleSubmit} className="my-6 space-y-2">
-                    <label
-                      htmlFor="displayNameInput"
-                      className="block text-xs font-medium text-foreground"
-                    >
-                      {isRoleAdmin ? "Organization Name" : "Full Name"}
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
-                        {isRoleAdmin ? (
-                          <Briefcase className="w-4 h-4" />
-                        ) : (
+                  <form id="onboarding-form" onSubmit={handleSubmit} className="my-6 space-y-4">
+                    {/* Full Name Input */}
+                    <div className="space-y-2">
+                      <label
+                        htmlFor="userNameInput"
+                        className="block text-xs font-medium text-foreground"
+                      >
+                        Full Name
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
                           <User className="w-4 h-4" />
-                        )}
+                        </div>
+                        <input
+                          id="userNameInput"
+                          type="text"
+                          value={userName}
+                          onChange={(e) => {
+                            setUserName(e.target.value);
+                            if (inputError) setInputError("");
+                          }}
+                          placeholder="Alex Morgan"
+                          autoFocus
+                          disabled={isSubmitting}
+                          className={`w-full pl-10 pr-4 py-2.5 bg-background rounded-lg border text-sm text-foreground placeholder:text-muted-foreground/60 transition-all focus:outline-none focus:ring-2 ${
+                            inputError && !userName.trim()
+                              ? "border-destructive focus:ring-destructive/30"
+                              : "border-border focus:border-primary focus:ring-primary/20"
+                          }`}
+                        />
                       </div>
-                      <input
-                        id="displayNameInput"
-                        type="text"
-                        value={displayName}
-                        onChange={(e) => {
-                          setDisplayName(e.target.value);
-                          if (inputError) setInputError("");
-                        }}
-                        placeholder={isRoleAdmin ? "Acme Corp" : "Alex Morgan"}
-                        autoFocus
-                        disabled={isSubmitting}
-                        className={`w-full pl-10 pr-4 py-2.5 bg-background rounded-lg border text-sm text-foreground placeholder:text-muted-foreground/60 transition-all focus:outline-none focus:ring-2 ${
-                          inputError
-                            ? "border-destructive focus:ring-destructive/30"
-                            : "border-border focus:border-primary focus:ring-primary/20"
-                        }`}
-                      />
                     </div>
+
+                    {/* Organization Name Input (Admin Only) */}
+                    {isRoleAdmin && (
+                      <div className="space-y-2">
+                        <label
+                          htmlFor="orgNameInput"
+                          className="block text-xs font-medium text-foreground"
+                        >
+                          Organization Name
+                        </label>
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
+                            <Briefcase className="w-4 h-4" />
+                          </div>
+                          <input
+                            id="orgNameInput"
+                            type="text"
+                            value={organizationName}
+                            onChange={(e) => {
+                              setOrganizationName(e.target.value);
+                              if (inputError) setInputError("");
+                            }}
+                            placeholder="Acme Corp"
+                            disabled={isSubmitting}
+                            className={`w-full pl-10 pr-4 py-2.5 bg-background rounded-lg border text-sm text-foreground placeholder:text-muted-foreground/60 transition-all focus:outline-none focus:ring-2 ${
+                              inputError && !organizationName.trim()
+                                ? "border-destructive focus:ring-destructive/30"
+                                : "border-border focus:border-primary focus:ring-primary/20"
+                            }`}
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {inputError && (
                       <p className="text-xs text-destructive font-medium pt-0.5">
                         {inputError}
@@ -314,7 +351,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <button
                   type="submit"
                   form="onboarding-form"
-                  disabled={isSubmitting || !displayName.trim()}
+                  disabled={isSubmitting || !userName.trim() || (isRoleAdmin && !organizationName.trim())}
                   className="px-5 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium transition-all flex items-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {isSubmitting ? (

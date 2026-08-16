@@ -38,6 +38,7 @@ def complete_onboarding(
         "user_id": updated_user.id,
         "email": updated_user.email,
         "role": updated_user.role.value,
+        "organization_id": updated_user.organization_id,
     })
 
     response.set_cookie(
@@ -60,7 +61,7 @@ def get_candidates(
     db: Session = Depends(get_db),
     current_user: User = Depends(admin_required),
 ):
-    return UserService.get_all_candidates(db)
+    return UserService.get_all_candidates(db=db, organization_id=current_user.organization_id)
 
 
 @router.get(
@@ -75,4 +76,5 @@ def get_available_candidates(
     return UserService.get_available_candidates(
         db=db,
         interview_id=interview_id,
+        organization_id=current_user.organization_id,
     )

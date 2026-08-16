@@ -40,10 +40,14 @@ class UserRepository:
     @staticmethod
     def get_all_candidates(
         db: Session,
+        organization_id: int,
     ):
         return (
             db.query(User)
-            .filter(User.role == UserRole.candidate)
+            .filter(
+                User.role == UserRole.candidate,
+                User.organization_id == organization_id,
+            )
             .order_by(User.name.asc())
             .all()
         )
@@ -52,12 +56,14 @@ class UserRepository:
     def get_candidates_by_ids(
         db: Session,
         candidate_ids: list[int],
+        organization_id: int,
     ):
         return (
             db.query(User)
             .filter(
                 User.id.in_(candidate_ids),
                 User.role == UserRole.candidate,
+                User.organization_id == organization_id,
             )
             .all()
         )
@@ -66,6 +72,7 @@ class UserRepository:
     def get_available_candidates(
         db: Session,
         interview_id: int,
+        organization_id: int,
     ):
         assigned_candidate_ids = (
             db.query(InterviewSession.candidate_id)
@@ -79,6 +86,7 @@ class UserRepository:
             .filter(
                 User.role == UserRole.candidate,
                 ~User.id.in_(assigned_candidate_ids),
+                User.organization_id == organization_id,
             )
             .order_by(User.name.asc())
             .all()
@@ -90,9 +98,23 @@ class UserRepository:
         user: User,
         role: UserRole,
         name: str,
+        organization_name: str | None = None,
     )->User:
+        from models.organization import Organization
+        from fastapi import HTTPException
+        
         user.role = role
         user.name = name
+        
+        if role == UserRole.admin:
+            if not organization_name:
+                raise HTTPException(status_code=400, detail="Organization name is required for admins")
+            
+            new_org = Organization(name=organization_name)
+            db.add(new_org)
+            db.flush()
+            user.organization_id = new_org.id
+            
         user.is_onboarded = True
         db.add(user)
         db.flush()
