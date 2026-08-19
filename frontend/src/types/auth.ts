@@ -12,7 +12,11 @@ export const registerFormSchema = z.object({
 });
 
 export type RegisterFormData = z.infer<typeof registerFormSchema>;
-export type RegisterRequest = Omit<RegisterFormData, "confirmPassword">;
+
+export type RegisterRequest = Omit<
+  RegisterFormData,
+  "confirmPassword"
+>;
 
 
 export const loginSchema = z.object({
@@ -25,12 +29,20 @@ export interface AuthResponse {
   message: string;
 }
 
+export interface MembershipInfo {
+  id: number;
+  organization_id: number;
+  organization_name: string;
+  role: "admin" | "candidate";
+  joined_at: string;
+}
+
 export interface GetMeResponse {
   id: number;
   name: string | null;
   email: string;
-  role: "admin" | "candidate";
   is_onboarded: boolean;
+  memberships: MembershipInfo[];
 }
 
 export interface AuthContextType {
@@ -38,6 +50,8 @@ export interface AuthContextType {
   setUser: React.Dispatch<React.SetStateAction<GetMeResponse | null>>;
   loading: boolean;
   fetchUser: () => Promise<GetMeResponse | null>;
+  activeOrg: MembershipInfo | null;
+  setActiveOrg: (org: MembershipInfo | null) => void;
 }
 
 export interface AuthProviderProps {

@@ -3,51 +3,57 @@ import { useAuth } from "@/hooks/useAuth";
 import { LoadingAnimation } from "@/components/shared/loading-animation";
 
 interface ProtectedRouteProps {
-  children: React.JSX.Element;
-  allowedRoles?: ("admin" | "candidate")[];
+    children: React.JSX.Element;
+    allowedRoles?: ("admin" | "candidate")[];
 }
 
-export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
-  const { user, loading } = useAuth();
-  const location = useLocation();
-  if (loading) {
-    return (
-      <LoadingAnimation text="Loading Session..." />
-    );
-  }
+export function ProtectedRoute({
+    children,
+    allowedRoles,
+}: ProtectedRouteProps) {
+    const { user, loading, activeOrg } = useAuth();
+    const location = useLocation();
 
-  if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
-  }
+    if (loading) {
+        return <LoadingAnimation text="Loading Session..." />;
+    }
 
-  if (!user.is_onboarded && location.pathname !== "/onboarding") {
-    return <Navigate to="/onboarding" replace />;
-  }
+    if (!user) {
+        return <Navigate to="/login" state={{ from: location }} replace />;
+    }
 
-  if (user.is_onboarded && location.pathname === "/onboarding") {
-    return (
-      <Navigate
-        to={user.role === "admin" ? "/admin/dashboard" : "/candidate/interviews"}
-        replace
-      />
-    );
-  }
+    // Not onboarded → redirect to onboarding
+    if (!user.is_onboarded && location.pathname !== "/onboarding") {
+        return <Navigate to="/onboarding" replace />;
+    }
 
-  if (
-    allowedRoles &&
-    !allowedRoles.includes(user.role)
-  ) {
-    return (
-      <Navigate
-        to={
-          user.role === "admin"
-            ? "/admin/dashboard"
-            : "/candidate/interviews"
+    // Already onboarded, trying to revisit onboarding
+    if (user.is_onboarded && location.pathname === "/onboarding") {
+        const role = activeOrg?.role ?? user.memberships[0]?.role;
+
+        return (
+            <Navigate
+                to={
+                    role === "admin"
+                        ? "/admin/dashboard"
+                        : "/candidate/interviews"
+                }
+                replace
+            />
+        );
+    }
+
+    // Role check against active organization membership
+    if (allowedRoles && activeOrg) {
+        if (!allowedRoles.includes(activeOrg.role)) {
+            const fallback =
+                activeOrg.role === "admin"
+                    ? "/admin/dashboard"
+                    : "/candidate/interviews";
+
+            return <Navigate to={fallback} replace />;
         }
-        replace
-      />
-    );
-  }
+    }
 
-  return children;
+    return children;
 }

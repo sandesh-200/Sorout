@@ -1,5 +1,5 @@
 from pydantic import BaseModel,Field
-from models.user import UserRole
+from schemas.membership import MembershipResponse
 
 
 class CandidateResponse(BaseModel):
@@ -15,17 +15,16 @@ class UserResponse(BaseModel):
     id: int
     name: str | None = None
     email: str
-    role: UserRole
     is_onboarded: bool
+    memberships: list[MembershipResponse] = []
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}
 
 class UserOnboardingRequest(BaseModel):
-    role: UserRole
+    role: str
     user_name: str = Field(..., min_length=1, max_length=100)
-    organization_name: str | None = Field(None, min_length=1, max_length=100)
-
-    class Config:
-        from_attributes = True
+    organization_name: str | None = Field(
+        None,
+        min_length=1,
+        max_length=100,
+    )

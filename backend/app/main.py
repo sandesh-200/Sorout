@@ -14,6 +14,8 @@ from api.conversation import router as conversation_router
 from api.tts import router as tts_router
 from api.health import router as health_router
 from fastapi.middleware.cors import CORSMiddleware
+from api.organization_join_link import router as organization_join_link_router
+from api.join_links import router as join_links_router
 
 
 app = FastAPI(title=settings.PROJECT_NAME)
@@ -47,6 +49,9 @@ api_router.include_router(interview_router)
 api_router.include_router(evaluation_router)
 api_router.include_router(conversation_router)
 api_router.include_router(tts_router)
+api_router.include_router(organization_join_link_router)
+api_router.include_router(join_links_router)
+
 
 
 

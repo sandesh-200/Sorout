@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence, type Variants } from "framer-motion";
 import {
   Building2,
@@ -37,12 +37,18 @@ const slideVariants: Variants = {
   visible: {
     x: 0,
     opacity: 1,
-    transition: { duration: 0.25, ease: [0.16, 1, 0.3, 1] },
+    transition: {
+      duration: 0.25,
+      ease: [0.16, 1, 0.3, 1],
+    },
   },
   exit: (direction: number) => ({
     x: direction < 0 ? 24 : -24,
     opacity: 0,
-    transition: { duration: 0.18, ease: [0.7, 0, 0.84, 0] },
+    transition: {
+      duration: 0.18,
+      ease: [0.7, 0, 0.84, 0],
+    },
   }),
 };
 
@@ -52,12 +58,50 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 }) => {
   const [step, setStep] = useState<1 | 2>(1);
   const [direction, setDirection] = useState<number>(1);
-  const [selectedRole, setSelectedRole] = useState<UserRoleType | null>(null);
+
+  const [selectedRole, setSelectedRole] =
+    useState<UserRoleType | null>(null);
+
   const [userName, setUserName] = useState<string>("");
   const [organizationName, setOrganizationName] = useState<string>("");
   const [inputError, setInputError] = useState<string>("");
 
+  /*
+   * Join-link flow
+   *
+   * JoinPage stores the token here:
+   *
+   * sessionStorage.setItem("join_token", token)
+   *
+   * The token is intentionally NOT included in OnboardingData.
+   * It will be consumed separately by the onboarding page after
+   * the user's profile has been completed.
+   */
+  const [hasJoinToken, setHasJoinToken] = useState(false);
+
+  useEffect(() => {
+    const joinToken = sessionStorage.getItem("join_token");
+
+    setHasJoinToken(!!joinToken);
+
+    /*
+     * Anyone coming through an organization join link
+     * must onboard as a candidate.
+     */
+    if (joinToken) {
+      setSelectedRole("candidate");
+    }
+  }, []);
+
   const handleRoleSelect = (role: UserRoleType) => {
+    /*
+     * Users coming through a join link cannot change
+     * their role.
+     */
+    if (hasJoinToken) {
+      return;
+    }
+
     setSelectedRole(role);
   };
 
@@ -77,23 +121,40 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!userName.trim()) {
       setInputError("Please enter your full name");
       return;
     }
+
     if (selectedRole === "admin" && !organizationName.trim()) {
       setInputError("Please enter your organization name");
       return;
     }
 
-    if (selectedRole) {
-      setInputError("");
-      onComplete({
-        role: selectedRole,
-        user_name: userName.trim(),
-        ...(selectedRole === "admin" ? { organization_name: organizationName.trim() } : {}),
-      });
+    if (!selectedRole) {
+      return;
     }
+
+    setInputError("");
+
+    /*
+     * IMPORTANT:
+     *
+     * We no longer send invite_token here.
+     *
+     * The join token stays in sessionStorage and will be
+     * consumed separately after onboarding.
+     */
+    onComplete({
+      role: selectedRole,
+      user_name: userName.trim(),
+      ...(selectedRole === "admin"
+        ? {
+            organization_name: organizationName.trim(),
+          }
+        : {}),
+    });
   };
 
   const isRoleAdmin = selectedRole === "admin";
@@ -101,8 +162,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   return (
     <div className="min-h-screen bg-background flex flex-col justify-center items-center p-4 sm:p-6 text-foreground antialiased">
       <div className="w-full max-w-xl bg-card border border-border rounded-xl shadow-sm overflow-hidden transition-all">
-        
-        {/* Shadcn Header Stepper */}
+        {/* Stepper */}
         <div className="px-6 sm:px-8 pt-8 pb-4 border-b border-border bg-card">
           <Stepper steps={steps} currentStep={step} />
         </div>
@@ -123,103 +183,140 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <h1 className="text-xl sm:text-2xl font-semibold tracking-tight text-card-foreground">
                       How do you plan to use the platform?
                     </h1>
+
                     <p className="text-sm text-muted-foreground leading-relaxed">
-                      Select your primary role to customize your workspace experience.
+                      {hasJoinToken
+                        ? "Your organization join link determines your workspace role."
+                        : "Select your primary role to customize your workspace experience."}
                     </p>
                   </div>
 
-                  {/* Role Cards */}
-                  <div
-                    role="radiogroup"
-                    aria-label="Select your role"
-                    className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-6"
-                  >
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={selectedRole === "admin"}
-                      onClick={() => handleRoleSelect("admin")}
-                      className={`group relative text-left rounded-lg p-5 border transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col justify-between ${
-                        selectedRole === "admin"
-                          ? "border-primary bg-primary/10 ring-1 ring-primary/20 shadow-xs"
-                          : "border-border bg-card hover:bg-muted/40 hover:border-border/80"
-                      }`}
+                  {/* Normal users */}
+                  {!hasJoinToken && (
+                    <div
+                      role="radiogroup"
+                      aria-label="Select your role"
+                      className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 my-6"
                     >
-                      <div className="flex items-start justify-between w-full mb-4">
-                        <div
-                          className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors ${
-                            selectedRole === "admin"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground group-hover:text-foreground"
-                          }`}
-                        >
-                          <Building2 className="w-5 h-5" />
-                        </div>
-                        <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                            selectedRole === "admin"
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border opacity-40 group-hover:opacity-100"
-                          }`}
-                        >
-                          {selectedRole === "admin" && (
-                            <Check className="w-3 h-3 stroke-3" />
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-card-foreground mb-1">
-                          Organization / Admin
-                        </h3>
-                        <p className="text-xs text-muted-foreground leading-normal">
-                          Set up assessments, manage candidates, and conduct interviews.
-                        </p>
-                      </div>
-                    </button>
+                      {/* Admin */}
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={selectedRole === "admin"}
+                        onClick={() => handleRoleSelect("admin")}
+                        className={`group relative text-left rounded-lg p-5 border transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col justify-between ${
+                          selectedRole === "admin"
+                            ? "border-primary bg-primary/10 ring-1 ring-primary/20 shadow-xs"
+                            : "border-border bg-card hover:bg-muted/40 hover:border-border/80"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between w-full mb-4">
+                          <div
+                            className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors ${
+                              selectedRole === "admin"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground group-hover:text-foreground"
+                            }`}
+                          >
+                            <Building2 className="w-5 h-5" />
+                          </div>
 
-                    <button
-                      type="button"
-                      role="radio"
-                      aria-checked={selectedRole === "candidate"}
-                      onClick={() => handleRoleSelect("candidate")}
-                      className={`group relative text-left rounded-lg p-5 border transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col justify-between ${
-                        selectedRole === "candidate"
-                          ? "border-primary bg-primary/10 ring-1 ring-primary/20 shadow-xs"
-                          : "border-border bg-card hover:bg-muted/40 hover:border-border/80"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between w-full mb-4">
-                        <div
-                          className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors ${
-                            selectedRole === "candidate"
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground group-hover:text-foreground"
-                          }`}
-                        >
+                          <div
+                            className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                              selectedRole === "admin"
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border opacity-40 group-hover:opacity-100"
+                            }`}
+                          >
+                            {selectedRole === "admin" && (
+                              <Check className="w-3 h-3 stroke-3" />
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-sm font-semibold text-card-foreground mb-1">
+                            Organization / Admin
+                          </h3>
+
+                          <p className="text-xs text-muted-foreground leading-normal">
+                            Set up assessments, manage candidates, and conduct
+                            interviews.
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Candidate */}
+                      <button
+                        type="button"
+                        role="radio"
+                        aria-checked={selectedRole === "candidate"}
+                        onClick={() => handleRoleSelect("candidate")}
+                        className={`group relative text-left rounded-lg p-5 border transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring flex flex-col justify-between ${
+                          selectedRole === "candidate"
+                            ? "border-primary bg-primary/10 ring-1 ring-primary/20 shadow-xs"
+                            : "border-border bg-card hover:bg-muted/40 hover:border-border/80"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between w-full mb-4">
+                          <div
+                            className={`w-10 h-10 rounded-md flex items-center justify-center transition-colors ${
+                              selectedRole === "candidate"
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground group-hover:text-foreground"
+                            }`}
+                          >
+                            <User className="w-5 h-5" />
+                          </div>
+
+                          <div
+                            className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
+                              selectedRole === "candidate"
+                                ? "border-primary bg-primary text-primary-foreground"
+                                : "border-border opacity-40 group-hover:opacity-100"
+                            }`}
+                          >
+                            {selectedRole === "candidate" && (
+                              <Check className="w-3 h-3 stroke-3" />
+                            )}
+                          </div>
+                        </div>
+
+                        <div>
+                          <h3 className="text-sm font-semibold text-card-foreground mb-1">
+                            Candidate
+                          </h3>
+
+                          <p className="text-xs text-muted-foreground leading-normal">
+                            Complete assessments, build your profile, and
+                            respond to invitations.
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Join-link users */}
+                  {hasJoinToken && (
+                    <div className="my-6 rounded-lg border border-border bg-muted/30 p-5">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 shrink-0 rounded-md bg-primary/10 text-primary flex items-center justify-center">
                           <User className="w-5 h-5" />
                         </div>
-                        <div
-                          className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${
-                            selectedRole === "candidate"
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border opacity-40 group-hover:opacity-100"
-                          }`}
-                        >
-                          {selectedRole === "candidate" && (
-                            <Check className="w-3 h-3 stroke-3" />
-                          )}
+
+                        <div>
+                          <h3 className="text-sm font-semibold text-card-foreground">
+                            Candidate
+                          </h3>
+
+                          <p className="text-xs text-muted-foreground leading-relaxed mt-1">
+                            You&apos;re joining an organization as a Candidate
+                            through an organization join link.
+                          </p>
                         </div>
                       </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-card-foreground mb-1">
-                          Candidate
-                        </h3>
-                        <p className="text-xs text-muted-foreground leading-normal">
-                          Complete assessments, build your profile, and respond to invitations.
-                        </p>
-                      </div>
-                    </button>
-                  </div>
+                    </div>
+                  )}
                 </motion.div>
               ) : (
                 <motion.div
@@ -236,6 +333,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         ? "What is your organization's name?"
                         : "What is your full name?"}
                     </h1>
+
                     <p className="text-sm text-muted-foreground leading-relaxed">
                       {isRoleAdmin
                         ? "This will be visible to candidates during interview sessions."
@@ -243,8 +341,12 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     </p>
                   </div>
 
-                  <form id="onboarding-form" onSubmit={handleSubmit} className="my-6 space-y-4">
-                    {/* Full Name Input */}
+                  <form
+                    id="onboarding-form"
+                    onSubmit={handleSubmit}
+                    className="my-6 space-y-4"
+                  >
+                    {/* Full Name */}
                     <div className="space-y-2">
                       <label
                         htmlFor="userNameInput"
@@ -252,17 +354,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       >
                         Full Name
                       </label>
+
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
                           <User className="w-4 h-4" />
                         </div>
+
                         <input
                           id="userNameInput"
                           type="text"
                           value={userName}
                           onChange={(e) => {
                             setUserName(e.target.value);
-                            if (inputError) setInputError("");
+
+                            if (inputError) {
+                              setInputError("");
+                            }
                           }}
                           placeholder="Alex Morgan"
                           autoFocus
@@ -276,7 +383,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       </div>
                     </div>
 
-                    {/* Organization Name Input (Admin Only) */}
+                    {/* Organization Name - Admin Only */}
                     {isRoleAdmin && (
                       <div className="space-y-2">
                         <label
@@ -285,17 +392,22 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                         >
                           Organization Name
                         </label>
+
                         <div className="relative">
                           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted-foreground">
                             <Briefcase className="w-4 h-4" />
                           </div>
+
                           <input
                             id="orgNameInput"
                             type="text"
                             value={organizationName}
                             onChange={(e) => {
                               setOrganizationName(e.target.value);
-                              if (inputError) setInputError("");
+
+                              if (inputError) {
+                                setInputError("");
+                              }
                             }}
                             placeholder="Acme Corp"
                             disabled={isSubmitting}
@@ -309,6 +421,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                       </div>
                     )}
 
+                    {/* Error */}
                     {inputError && (
                       <p className="text-xs text-destructive font-medium pt-0.5">
                         {inputError}
@@ -320,7 +433,7 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             </AnimatePresence>
           </div>
 
-          {/* Bottom Actions Bar */}
+          {/* Bottom Actions */}
           <div className="pt-6 border-t border-border flex items-center justify-between">
             {step === 2 ? (
               <button
@@ -351,7 +464,11 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                 <button
                   type="submit"
                   form="onboarding-form"
-                  disabled={isSubmitting || !userName.trim() || (isRoleAdmin && !organizationName.trim())}
+                  disabled={
+                    isSubmitting ||
+                    !userName.trim() ||
+                    (isRoleAdmin && !organizationName.trim())
+                  }
                   className="px-5 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium transition-all flex items-center gap-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
                   {isSubmitting ? (
@@ -374,3 +491,6 @@ export const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     </div>
   );
 };
+
+export default OnboardingFlow;
+
