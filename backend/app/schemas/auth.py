@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from models.user import UserRole
+from schemas.membership import MembershipResponse
+from pydantic import BaseModel, EmailStr,Field
 
 
 class RegisterRequest(BaseModel):
@@ -12,13 +12,12 @@ class LoginRequest(BaseModel):
     email: EmailStr
     password: str
 
+
 class UserAuthResponse(BaseModel):
     id: int
     name: str | None = None
     email: EmailStr
-    role: UserRole
     is_onboarded: bool
+    memberships: list[MembershipResponse] = Field(default_factory=list)
 
-    model_config = {
-        "from_attributes": True
-    }
+    model_config = {"from_attributes": True}

@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import LoginPage from "@/pages/LoginPage";
-import SignupPage from "@/pages/SignupPage";
+import LoginPage from "@/pages/auth/LoginPage";
+import SignupPage from "@/pages/auth/SignupPage";
 
 import { ProtectedRoute } from "./ProtectedRoute";
 
@@ -13,7 +13,8 @@ import InterviewInstructionsPage from "@/pages/candidate/InterviewInstructionsPa
 import InterviewResultPage from "@/pages/candidate/InterviewResultPage";
 import ConversationalWorkspace from "@/pages/candidate/ConversationalWorkspace";
 import LandingPage from "@/pages/marketing/LandingPage";
-import { OnboardingPage } from "@/pages/OnboardingPage";
+import { OnboardingPage } from "@/pages/auth/OnboardingPage";
+import JoinPage from "@/pages/joinLink/JoinPage";
 
 const AnalyticsPage = () => (
 	<div className="space-y-2">
@@ -42,6 +43,7 @@ export default function AppRouter() {
 			<Route path="/" element={<LandingPage />} />
 			<Route path="/login" element={<LoginPage />} />
 			<Route path="/signup" element={<SignupPage />} />
+			<Route path="/join/:token" element={<JoinPage />} />
 			<Route path="/unauthorized" element={<UnauthorizedPage />} />
 
 			<Route

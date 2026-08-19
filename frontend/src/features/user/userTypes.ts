@@ -6,6 +6,7 @@ export interface UserOnboardingPayload {
   role: UserRole;
   user_name: string;
   organization_name?: string;
+  join_token?: string;
 }
 
 export interface UserState {
