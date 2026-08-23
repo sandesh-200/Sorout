@@ -9,6 +9,7 @@ from repositories.question_repository import QuestionRepository
 from ai.chains.question_generator import QuestionGenerator
 from repositories.user_repository import UserRepository
 from repositories.interview_session_repository import InterviewSessionRepository
+from repositories.candidate_repository import CandidateRepository
 
 class InterviewService:
     @staticmethod
@@ -241,7 +242,7 @@ class InterviewService:
             )
 
         # Validate candidate ids
-        candidates = UserRepository.get_candidates_by_ids(
+        candidates = CandidateRepository.get_candidates_by_ids(
             db=db,
             candidate_ids=candidate_ids,
             organization_id=organization_id,

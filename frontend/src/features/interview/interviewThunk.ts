@@ -1,5 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import type { AssignCandidatesRequest, AssignCandidatesResponse, Candidate, CreateInterviewRequest, Interview, InterviewQuestion, UpdateInterviewRequest } from "./interviewTypes";
+import type { AssignCandidatesRequest, AssignCandidatesResponse, CreateInterviewRequest, Interview, UpdateInterviewRequest, CandidateInterview } from "./interviewTypes";
+import type { Candidate } from "../candidate/candidateTypes";
 import { interviewAPI } from "./InterviewAPI";
 import type { AxiosError } from "axios";
 
@@ -93,70 +94,6 @@ export const deleteInterview = createAsyncThunk<
   }
 });
 
-export const generateInterviewQuestions = createAsyncThunk<
-  number,
-  number,
-  { rejectValue: string }
->(
-  "interview/generateQuestions",
-  async (id, { rejectWithValue }) => {
-    try {
-      await interviewAPI.generateQuestions(id);
-
-      return id;
-    } catch (error) {
-      const err = error as AxiosError<ApiError>;
-
-      return rejectWithValue(
-        err.response?.data.detail ??
-          "Failed to generate questions"
-      );
-    }
-  }
-);
-
-export const getInterviewQuestions = createAsyncThunk<
-  InterviewQuestion[],
-  number,
-  { rejectValue: string }
->(
-  "interview/getQuestions",
-  async (id, { rejectWithValue }) => {
-    try {
-      const response = await interviewAPI.getQuestions(id);
-
-      return response.data;
-    } catch (error) {
-      const err = error as AxiosError<ApiError>;
-
-      return rejectWithValue(
-        err.response?.data.detail ??
-          "Failed to fetch questions"
-      );
-    }
-  }
-);
-
-export const getAvailableCandidates = createAsyncThunk<
-  Candidate[],
-  number,
-  { rejectValue: string }
->(
-  "interview/getAvailableCandidates",
-  async (interviewId, { rejectWithValue }) => {
-    try {
-      const response = await interviewAPI.getAvailableCandidates(interviewId);
-      return response.data;
-    } catch (error) {
-      const err = error as AxiosError<ApiError>;
-
-      return rejectWithValue(
-        err.response?.data.detail ??
-          "Failed to fetch available candidates"
-      );
-    }
-  }
-);
 
 export const assignCandidates = createAsyncThunk<
   AssignCandidatesResponse,
@@ -187,3 +124,23 @@ export const assignCandidates = createAsyncThunk<
     }
   }
 );
+
+export const getMyInterviews = createAsyncThunk<
+  CandidateInterview[],
+  void,
+  { rejectValue: string }
+>(
+  "candidate/getMyInterviews",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await interviewAPI.getMyInterviews();
+      return response.data;
+    } catch (error) {
+      const err = error as AxiosError<ApiError>;
+      return rejectWithValue(
+        err.response?.data.detail ?? "Failed to fetch interviews"
+      );
+    }
+  }
+);
+

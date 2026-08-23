@@ -40,13 +40,10 @@ export interface ConversationInterviewState {
 
   completed: boolean;
 
-  evaluation: InterviewEvaluation | null;
-
   loading: boolean;
 
   sendingMessage: boolean;
 
-  evaluating: boolean;
 
   error: string | null;
 }

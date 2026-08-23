@@ -69,13 +69,12 @@ export default function InterviewResultPage() {
   const fetchResult = useCallback(async () => {
     if (!sessionId) return;
     try {
-      const res = await api.get(`/candidate/sessions/${sessionId}/result`);
+      const res = await api.get(`/candidate/evaluations/${sessionId}/result`);
       setResult(res.data);
       setProcessing(false);
       setLoading(false);
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response?.status === 404) {
-        // Evaluation not ready yet — show processing screen and poll
         setProcessing(true);
         setLoading(false);
       } else {

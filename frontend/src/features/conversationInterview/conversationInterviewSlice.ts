@@ -1,7 +1,6 @@
 import {
   createSlice,
   isPending,
-  isRejected,
 } from "@reduxjs/toolkit";
 
 import type {
@@ -11,7 +10,6 @@ import type {
 import {
   startConversation,
   sendMessage,
-  evaluateInterview,
 } from "./conversationInterviewThunk";
 
 const initialState: ConversationInterviewState = {
@@ -21,13 +19,9 @@ const initialState: ConversationInterviewState = {
 
   completed: false,
 
-  evaluation: null,
-
   loading: false,
 
   sendingMessage: false,
-
-  evaluating: false,
 
   error: null,
 };
@@ -56,19 +50,10 @@ const conversationInterviewSlice = createSlice({
 
     resetConversation(state) {
       state.sessionId = null;
-
       state.messages = [];
-
       state.completed = false;
-
-      state.evaluation = null;
-
       state.loading = false;
-
       state.sendingMessage = false;
-
-      state.evaluating = false;
-
       state.error = null;
     },
 
@@ -98,15 +83,6 @@ const conversationInterviewSlice = createSlice({
       }
     );
 
-    builder.addCase(
-      evaluateInterview.fulfilled,
-      (state, action) => {
-        state.evaluating = false;
-
-        state.evaluation = action.payload;
-      }
-    );
-
     builder.addMatcher(
       isPending(startConversation),
       (state) => {
@@ -122,32 +98,6 @@ const conversationInterviewSlice = createSlice({
         state.sendingMessage = true;
 
         state.error = null;
-      }
-    );
-
-    builder.addMatcher(
-      isPending(evaluateInterview),
-      (state) => {
-        state.evaluating = true;
-
-        state.error = null;
-      }
-    );
-
-    builder.addMatcher(
-      isRejected(
-        startConversation,
-        sendMessage,
-        evaluateInterview
-      ),
-      (state, action) => {
-        state.loading = false;
-
-        state.sendingMessage = false;
-
-        state.evaluating = false;
-
-        state.error = action.payload as string;
       }
     );
   },

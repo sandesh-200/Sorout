@@ -15,6 +15,7 @@ import ConversationalWorkspace from "@/pages/candidate/ConversationalWorkspace";
 import LandingPage from "@/pages/marketing/LandingPage";
 import { OnboardingPage } from "@/pages/auth/OnboardingPage";
 import JoinPage from "@/pages/joinLink/JoinPage";
+import Candidates from "@/pages/admin/Candidates";
 
 const AnalyticsPage = () => (
 	<div className="space-y-2">
@@ -68,7 +69,7 @@ export default function AppRouter() {
 				<Route index element={<Navigate to="/admin/dashboard" replace />} />
 				<Route path="dashboard" element={<AnalyticsPage />} />
 				<Route path="interviews" element={<Interviews />} />
-				<Route path="candidates" element={<PlaceholderPage title="Candidates" />} />
+				<Route path="candidates" element={<Candidates />} />
 				<Route path="settings" element={<PlaceholderPage title="Admin Settings" />} />
 			</Route>
 

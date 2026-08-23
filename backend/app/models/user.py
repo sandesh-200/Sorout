@@ -13,5 +13,4 @@ class User(Base):
     is_onboarded = Column(Boolean, nullable=False, default=False)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
-    # Relationships
     memberships = relationship("OrganizationMembership", back_populates="user", cascade="all, delete-orphan")

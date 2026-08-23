@@ -8,12 +8,12 @@ from schemas.evaluation import InterviewEvaluationResponse
 from models.user import User
 
 router = APIRouter(
-    prefix="/candidate",
-    tags=["Evaluation"],
+    prefix="/evaluations",
+    tags=["Candidate - Evaluation"],
 )
 
 
-@router.post("/sessions/{session_id}/evaluate")
+@router.post("/{session_id}/evaluate")
 def evaluate(
     session_id: int,
     db: Session = Depends(get_db),
@@ -24,7 +24,7 @@ def evaluate(
     )
 
 @router.get(
-    "/sessions/{session_id}/result",
+    "/{session_id}/result",
     response_model=InterviewEvaluationResponse,
 )
 def get_result(

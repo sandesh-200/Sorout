@@ -3,6 +3,7 @@ import type { GetMeResponse } from "@/types/auth";
 import type { UserOnboardingPayload } from "./userTypes";
 
 export const userAPI = {
-  completeOnboarding: (payload: UserOnboardingPayload) =>
-    api.post<GetMeResponse>("/users/onboarding", payload),
+
+  //done
+  completeOnboarding: (payload: UserOnboardingPayload) =>api.post<GetMeResponse>("/users/onboarding", payload),
 };

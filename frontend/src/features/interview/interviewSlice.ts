@@ -1,25 +1,21 @@
 import type { InterviewState } from "@/features/interview/interviewTypes";
 import { createSlice, isPending, isRejected } from "@reduxjs/toolkit";
-import { 
-  createInterview, 
-  deleteInterview, 
-  getAllInterviews, 
-  getInterviewById, 
+import {
+  createInterview,
+  deleteInterview,
+  getAllInterviews,
+  getInterviewById,
   updateInterview,
-  generateInterviewQuestions,
-  getInterviewQuestions,
-  getAvailableCandidates,
-  assignCandidates
+  assignCandidates,
+  getMyInterviews
 } from "./interviewThunk";
 
 const initialState: InterviewState = {
   interviews: [],
   selectedInterview: null,
-  questions: [],
-  availableCandidates: [],
   assignmentResult: null,
+  candidateInterviews: [],
   loading: false,
-  generatingId: null,
   error: null,
 };
 
@@ -27,26 +23,18 @@ const interviewSlice = createSlice({
   name: "interview",
   initialState,
   reducers: {
-  clearSelectedInterview(state) {
-    state.selectedInterview = null;
-  },
+    clearSelectedInterview(state) {
+      state.selectedInterview = null;
+    },
 
-  clearInterviewError(state) {
-    state.error = null;
-  },
+    clearInterviewError(state) {
+      state.error = null;
+    },
 
-  clearQuestions(state) {
-    state.questions = [];
+    clearAssignmentResult(state) {
+      state.assignmentResult = null;
+    },
   },
-
-  clearAvailableCandidates(state) {
-    state.availableCandidates = [];
-  },
-
-  clearAssignmentResult(state) {
-    state.assignmentResult = null;
-  },
-},
 
   extraReducers: (builder) => {
     //fufilled
@@ -89,77 +77,12 @@ const interviewSlice = createSlice({
       }
     });
 
-    builder.addCase(
-      generateInterviewQuestions.pending,
-      (state, action) => {
-        state.error = null;
-        state.generatingId = action.meta.arg;
-      }
-    );
+    builder.addCase(getMyInterviews.fulfilled, (state, action) => {
+      state.loading = false;
+      state.candidateInterviews = action.payload;
+    });
 
-    builder.addCase(
-      generateInterviewQuestions.fulfilled,
-      (state, action) => {
-        state.generatingId = null;
-
-        const interview = state.interviews.find(
-          (i) => i.id === action.payload
-        );
-
-        if (interview) {
-          interview.status = "ready";
-        }
-
-        if (
-          state.selectedInterview?.id === action.payload
-        ) {
-          state.selectedInterview.status = "ready";
-        }
-      }
-    );
-
-     builder.addCase(
-      generateInterviewQuestions.rejected,
-      (state, action) => {
-        state.generatingId = null;
-        state.error =
-          action.payload ?? "Failed to generate questions.";
-      }
-    );
-
-    builder.addCase(
-  getInterviewQuestions.fulfilled,
-  (state, action) => {
-    state.loading = false;
-    state.questions = action.payload;
-  }
-);
-  builder.addCase(
-  getAvailableCandidates.fulfilled,
-  (state, action) => {
-    state.loading = false;
-    state.availableCandidates = action.payload;
-  }
-);
-
-builder.addCase(
-  assignCandidates.fulfilled,
-  (state, action) => {
-    state.loading = false;
-
-    state.assignmentResult = action.payload;
-
-    state.availableCandidates =
-      state.availableCandidates.filter(
-        (candidate) =>
-          !action.payload.assigned_candidate_ids.includes(
-            candidate.id
-          )
-      );
-  }
-);
-
-//matchers
+    //matchers
 
     //pending
     builder.addMatcher(
@@ -169,9 +92,8 @@ builder.addCase(
         getInterviewById,
         updateInterview,
         deleteInterview,
-        getInterviewQuestions,
-        getAvailableCandidates,
-        assignCandidates
+        assignCandidates,
+        getMyInterviews
       ),
       (state) => {
         state.loading = true;
@@ -187,9 +109,8 @@ builder.addCase(
         getInterviewById,
         updateInterview,
         deleteInterview,
-        getInterviewQuestions,
-        getAvailableCandidates,
-        assignCandidates
+        assignCandidates,
+        getMyInterviews
       ),
       (state, action) => {
         state.loading = false;
@@ -202,8 +123,6 @@ builder.addCase(
 export const {
   clearSelectedInterview,
   clearInterviewError,
-  clearQuestions,
-  clearAvailableCandidates,
   clearAssignmentResult
 } = interviewSlice.actions
 

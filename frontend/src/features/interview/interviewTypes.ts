@@ -5,6 +5,8 @@ export type InterviewStatus =
   | "completed"
   | "cancelled";
 
+import type { InterviewSessionStatus, Candidate } from "../candidate/candidateTypes";
+
 export interface Interview {
   id: number;
   title: string;
@@ -19,11 +21,9 @@ export interface Interview {
 export interface InterviewState {
   interviews: Interview[];
   selectedInterview: Interview | null;
-  questions: InterviewQuestion[];
-  availableCandidates: Candidate[];
   assignmentResult: AssignCandidatesResponse | null;
+  candidateInterviews: CandidateInterview[];
   loading: boolean;
-  generatingId: number | null;
   error: string | null;
 }
 
@@ -48,12 +48,6 @@ export interface InterviewQuestion {
   order_sequence: number;
 }
 
-export interface Candidate {
-  id: number;
-  name: string;
-  email: string;
-}
-
 export interface AssignCandidatesRequest {
   candidate_ids: number[];
 }
@@ -63,4 +57,19 @@ export interface AssignCandidatesResponse {
   already_assigned: number;
   assigned_candidate_ids: number[];
   message: string;
+}
+
+export interface CandidateInterview {
+  session_id: number;
+  interview_id: number;
+
+  title: string;
+  job_position: string;
+  seniority_level: string;
+
+  status: InterviewSessionStatus;
+
+  max_questions: number;
+
+  enrolled_at: string;
 }

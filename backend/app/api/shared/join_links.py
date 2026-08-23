@@ -11,7 +11,7 @@ from schemas.organization_join_link import (
 
 router = APIRouter(
     prefix="/join-links",
-    tags=["Public Join Links"],
+    tags=["Join Links"],
 )
 
 

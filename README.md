@@ -1,70 +1,87 @@
-# AI Interview System
+# Sorout
 
-A full-stack web application that automates the technical interview process. Admins create and configure interviews; candidates complete them through either a structured question-answer flow or a live voice-driven conversational session powered by a large language model. At the end of each session, the system evaluates responses and generates a structured performance report.
+A full-stack web application designed to automate and streamline the technical interview process. It provides role-based access for administrators to configure interview templates, manage candidate assignments, and review evaluations. Candidates can participate in either structured question-and-answer formats or live, conversational voice-driven sessions powered by large language models (LLMs). The system evaluates responses and generates structured performance reports.
 
 ---
 
 ## Table of Contents
 
-- [Architecture Overview](#architecture-overview)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Backend Setup](#backend-setup)
-  - [Frontend Setup](#frontend-setup)
-- [Environment Variables](#environment-variables)
-- [API Reference](#api-reference)
-- [User Roles and Flows](#user-roles-and-flows)
-- [Key Design Decisions](#key-design-decisions)
+1. [Features](#features)
+2. [Tech Stack](#tech-stack)
+3. [Architecture Overview](#architecture-overview)
+4. [Project Structure](#project-structure)
+5. [Authentication and Authorization](#authentication-and-authorization)
+6. [API Overview](#api-overview)
+7. [Environment Configuration](#environment-configuration)
+8. [Installation and Setup](#installation-and-setup)
+9. [Running the Project Locally](#running-the-project-locally)
 
 ---
 
-## Architecture Overview
+## Features
 
-The system is split into two independent applications that communicate over HTTP.
-
-```
-┌─────────────────────────────┐        ┌──────────────────────────────────┐
-│         Frontend            │        │            Backend               │
-│   React 19 + TypeScript     │ <----> │   FastAPI + SQLAlchemy + LangChain│
-│   Vite + Redux Toolkit      │  REST  │   Llama 3.1 via HuggingFace      │
-│   TailwindCSS + shadcn/ui   │        │   PostgreSQL / SQLite             │
-└─────────────────────────────┘        └──────────────────────────────────┘
-```
-
-The backend exposes a versioned REST API under `/api`. All endpoints requiring authentication read a signed JWT from an `httpOnly` cookie, which prevents client-side token access.
+* **Role-Based Access Control:** Distinct workflows for Administrators (manage templates, assign candidates, view results) and Candidates (participate in interviews).
+* **Organization Management:** Support for organizational structures, inviting members via join links, and isolating data by organization.
+* **AI-Generated Interviews:** Automatically generate technical interview questions based on job position and seniority level.
+* **Conversational Voice Interface:** Candidates can interact with the AI using their microphone via the Web Speech API (`SpeechRecognition` for input, `SpeechSynthesis` for output).
+* **Structured Q&A Interface:** Alternative text-based interface for completing interview sessions.
+* **Automated Evaluation:** Post-interview AI evaluation of candidate responses, resulting in structured performance reports.
+* **Secure Sessions:** HTTP-only cookies for JWT storage, preventing cross-site scripting (XSS) attacks.
 
 ---
 
 ## Tech Stack
 
 ### Backend
-
-| Layer | Technology |
-|---|---|
-| Framework | FastAPI |
-| ORM | SQLAlchemy (sync) |
-| Database | Any SQLAlchemy-compatible DB (tested with PostgreSQL) |
-| Auth | JWT via `python-jose`, bcrypt password hashing |
-| AI / LLM | LangChain + HuggingFace Inference API (Llama 3.1 8B Instruct) |
-| Rate Limiting | SlowAPI |
-| Config | Pydantic Settings (`.env` file) |
+* **Framework:** FastAPI
+* **Database:** PostgreSQL / SQLite
+* **ORM & Migrations:** SQLAlchemy (sync) and Alembic
+* **Authentication:** JWT via `python-jose`, password hashing via `bcrypt`
+* **AI / LLM Orchestration:** LangChain, LangGraph
+* **LLM Providers:** HuggingFace Inference API (`meta-llama/Llama-3.1-8B-Instruct`), Google GenAI
+* **Rate Limiting:** SlowAPI
 
 ### Frontend
+* **Framework:** React 19 (TypeScript)
+* **Build Tool:** Vite 7
+* **State Management:** Redux Toolkit
+* **Routing:** React Router v7
+* **Styling:** Tailwind CSS v4, `shadcn/ui`, Radix UI
+* **Form Handling:** React Hook Form with Zod validation
+* **HTTP Client:** Axios
+* **Tables:** TanStack React Table
 
-| Layer | Technology |
-|---|---|
-| Framework | React 19 |
-| Language | TypeScript |
-| Bundler | Vite 7 |
-| State Management | Redux Toolkit |
-| Routing | React Router v7 |
-| UI Components | shadcn/ui + Radix UI |
-| Styling | TailwindCSS v4 |
-| Forms | React Hook Form + Zod |
-| HTTP Client | Axios |
-| Voice / TTS | Web Speech API (SpeechRecognition + SpeechSynthesis) |
+---
+
+## Architecture Overview
+
+The system operates as a decoupled architecture where a React frontend communicates with a FastAPI backend via a versioned REST API.
+
+```mermaid
+flowchart LR
+    subgraph Frontend [Frontend (React + Vite)]
+        UI[User Interface]
+        Redux[Redux Store]
+        UI <--> Redux
+    end
+
+    subgraph Backend [Backend (FastAPI)]
+        API[REST API]
+        Services[Business Logic]
+        Repo[Data Repositories]
+        API <--> Services
+        Services <--> Repo
+    end
+
+    subgraph External [External Services]
+        LLM[HuggingFace / Google GenAI]
+        DB[(PostgreSQL)]
+    end
+
+    Redux <-->|HTTP / REST| API
+    Services <-->|LangChain| LLM
+    Repo <-->|SQLAlchemy| DB
+```
 
 ---
 
@@ -73,213 +90,149 @@ The backend exposes a versioned REST API under `/api`. All endpoints requiring a
 ```
 ai_interview_system/
 ├── backend/
-│   └── app/
-│       ├── main.py                  # FastAPI app, middleware, router registration
-│       ├── core/
-│       │   ├── config.py            # Pydantic settings loaded from .env
-│       │   └── database.py          # SQLAlchemy engine and session factory
-│       ├── models/                  # SQLAlchemy ORM models
-│       │   ├── user.py
-│       │   ├── interview.py
-│       │   ├── interview_session.py
-│       │   ├── interview_question.py
-│       │   ├── answer.py
-│       │   ├── conversation_message.py
-│       │   ├── interview_evaluation.py
-│       │   └── question_evaluation.py
-│       ├── schemas/                 # Pydantic request/response schemas
-│       ├── repositories/            # Data access layer (raw DB queries)
-│       ├── services/                # Business logic layer
-│       ├── api/                     # Route handlers
-│       │   ├── auth.py
-│       │   ├── user.py
-│       │   ├── candidate.py
-│       │   ├── interview.py
-│       │   ├── interview_session.py
-│       │   ├── conversation.py
-│       │   └── evaluation.py
-│       ├── ai/
-│       │   ├── llm.py               # LangChain LLM client (Llama 3.1)
-│       │   ├── chains/              # LangChain chains (question gen, chat, evaluation)
-│       │   ├── prompts/             # Prompt templates
-│       │   └── schemas/             # Structured output schemas for LLM responses
-│       └── utils/
-│           ├── security.py          # JWT creation and password hashing
-│           └── rate_limit.py        # SlowAPI limiter instance
+│   ├── alembic/                # Database migrations
+│   ├── app/
+│   │   ├── ai/                 # LangChain components, prompts, and chains
+│   │   ├── api/                # Route handlers (admin, candidate, shared)
+│   │   ├── core/               # App configuration and database setup
+│   │   ├── models/             # SQLAlchemy ORM models
+│   │   ├── repositories/       # Data access layer
+│   │   ├── routers/            # Router aggregation
+│   │   ├── schemas/            # Pydantic models for request/response validation
+│   │   ├── services/           # Core business logic
+│   │   ├── utils/              # Security and rate limiting utilities
+│   │   └── main.py             # FastAPI application entry point
+│   ├── alembic.ini             # Alembic configuration
+│   └── requirements.txt        # Python dependencies
 │
 └── frontend/
-    └── src/
-        ├── app/                     # Redux store configuration
-        ├── features/                # Redux slices and thunks
-        │   ├── candidate/
-        │   ├── interview/
-        │   ├── interviewSession/
-        │   └── conversationInterview/
-        ├── hooks/
-        │   └── useVoiceConversation.ts  # Speech recognition + TTS hook
-        ├── pages/
-        │   ├── admin/               # Interview management dashboard
-        │   └── candidate/
-        │       ├── CandidateInterviews.tsx
-        │       ├── InterviewInstructionsPage.tsx
-        │       ├── InterviewWorkspace.tsx       # Structured Q&A mode
-        │       ├── ConversationalWorkspace.tsx  # Voice conversation mode
-        │       └── InterviewResultPage.tsx
-        ├── components/
-        ├── layouts/                 # AdminLayout, CandidateLayout
-        └── routes/
-            ├── AppRouter.tsx
-            └── ProtectedRoute.tsx   # Role-based route guard
+    ├── src/
+    │   ├── api/                # Axios instance configuration
+    │   ├── app/                # Redux store setup
+    │   ├── components/         # Reusable UI components (shadcn, tables, dialogs)
+    │   ├── features/           # Redux slices, thunks, and types
+    │   ├── hooks/              # Custom React hooks (e.g., useVoiceConversation)
+    │   ├── layouts/            # Page layout wrappers
+    │   ├── pages/              # Role-specific route components (admin, candidate)
+    │   └── routes/             # React Router configuration
+    ├── package.json            # Node.js dependencies and scripts
+    ├── tailwind.css            # Global stylesheet
+    └── vite.config.ts          # Vite configuration
 ```
 
 ---
 
-## Getting Started
+## Authentication and Authorization
+
+* **JWT Strategy:** The backend issues a signed JWT upon successful login. It is set as an `httpOnly` cookie (`access_token`) on the client.
+* **CORS:** Cross-origin requests are configured with `allow_credentials=True` to ensure cookies are sent with every API request.
+* **Role Verification:** Endpoints enforce access based on organization memberships and roles (`Admin` vs. `Candidate`). The frontend uses `ProtectedRoute` wrappers to enforce role-based routing.
+
+---
+
+## API Overview
+
+The backend exposes a RESTful API under the `/api` prefix, divided into distinct routers:
+
+### Shared Routes (`/api/auth`)
+* `POST /auth/register` - Register a new user.
+* `POST /auth/login` - Authenticate and receive an `httpOnly` cookie.
+* `GET /auth/me` - Fetch the authenticated user's profile.
+* `POST /auth/logout` - Clear the session cookie.
+
+### Admin Routes (`/api/admin`)
+* `/interviews` - CRUD operations for interview templates.
+* `/interviews/{id}/generate` - Trigger AI generation of technical questions.
+* `/candidates` - View available candidates within an organization.
+* `/join-links` - Manage organization invitation links.
+
+### Candidate Routes (`/api/candidate`)
+* `/sessions` - View assigned interview sessions.
+* `/sessions/{id}/conversation/start` - Initiate a voice conversational session.
+* `/sessions/{id}/conversation/message` - Transmit candidate audio transcripts and receive AI replies.
+* `/sessions/{id}/evaluate` - Trigger the final evaluation and performance report generation.
+
+---
+
+## Environment Configuration
+
+Both the frontend and backend require environment variables. 
+
+### Backend Configuration
+
+Create a `.env` file in the `backend/` directory:
+
+```env
+DATABASE_URL=postgresql://user:password@localhost:5432/dbname
+PROJECT_NAME="AI Interview System"
+SECRET_KEY=<your-secure-random-string>
+HF_TOKEN=<your-huggingface-access-token>
+GEMINI_API_KEY=<your-google-genai-api-key>
+FRONTEND_URL=http://localhost:5173
+```
+
+### Frontend Configuration
+
+Ensure the frontend points to the correct backend API URL. By default, Vite proxies `/api` or the Axios instance targets `http://localhost:8000` via its base URL configuration.
+
+---
+
+## Installation and Setup
 
 ### Prerequisites
 
-- Python 3.10 or higher
-- Node.js 18 or higher
-- A database supported by SQLAlchemy (PostgreSQL recommended)
-- A HuggingFace account with API access to `meta-llama/Llama-3.1-8B-Instruct`
+* Python 3.10+
+* Node.js 18+
+* PostgreSQL (or SQLite for local development)
+* HuggingFace API Token (for LLM inference)
 
-### Backend Setup
+### 1. Backend Setup
 
 ```bash
-# Navigate to the backend directory
 cd backend
 
 # Create and activate a virtual environment
 python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# macOS / Linux
-source venv/bin/activate
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
 
-# Create a .env file (see Environment Variables section below)
-# Then start the development server from the app directory
-cd app
-uvicorn main:app --reload
+# Run database migrations
+alembic upgrade head
 ```
 
-The API will be available at `http://localhost:8000`.  
-Interactive documentation is at `http://localhost:8000/docs`.
-
-### Frontend Setup
+### 2. Frontend Setup
 
 ```bash
-# Navigate to the frontend directory
 cd frontend
 
 # Install dependencies
 npm install
-
-# Start the development server
-npm run dev
 ```
 
-The application will be available at `http://localhost:5173`.
-
 ---
 
-## Environment Variables
+## Running the Project Locally
 
-### Backend (`backend/.env`)
+### Start the Backend
 
-| Variable | Description | Example |
-|---|---|---|
-| `DATABASE_URL` | SQLAlchemy connection string | `postgresql://user:pass@localhost/db` |
-| `PROJECT_NAME` | Title shown in the OpenAPI docs | `AI Interview System` |
-| `SECRET_KEY` | Secret used to sign JWTs | A long, random string |
-| `ALGORITHM` | JWT signing algorithm | `HS256` |
-| `ACCESS_TOKEN_EXPIRE_MINUTES` | Token lifetime in minutes | `1440` |
-| `HF_TOKEN` | HuggingFace API token | `hf_...` |
+```bash
+cd backend
+source venv/bin/activate
+cd app
 
----
+# Start the FastAPI server
+uvicorn main:app --reload --port 8000
+```
+The API documentation (Swagger UI) is available at: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-## API Reference
+### Start the Frontend
 
-All routes are prefixed with `/api`.
+```bash
+cd frontend
 
-### Authentication — `/api/auth`
-
-| Method | Endpoint | Auth | Description |
-|---|---|---|---|
-| POST | `/auth/register` | Public | Register a new user |
-| POST | `/auth/login` | Public | Authenticate and set session cookie |
-| GET | `/auth/me` | Required | Return the current user's profile |
-| POST | `/auth/logout` | Public | Clear the session cookie |
-
-### Interviews — `/api/interviews` (Admin only)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/interviews` | Create a new interview |
-| GET | `/interviews` | List all interviews |
-| GET | `/interviews/{id}` | Get a single interview |
-| PATCH | `/interviews/{id}` | Update a draft interview |
-| DELETE | `/interviews/{id}` | Delete a draft interview |
-| POST | `/interviews/{id}/generate-questions` | Generate questions via LLM |
-| GET | `/interviews/{id}/questions` | List generated questions |
-| POST | `/interviews/{id}/assign` | Assign candidates to an interview |
-
-### Interview Sessions — `/api/interview_session` (Candidate only)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/interview_session/{session_id}/question` | Get the current question |
-| POST | `/interview_session/{session_id}/answer` | Submit an answer |
-
-### Conversational Interview — `/api/interview_session` (Candidate only)
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/interview_session/{session_id}/conversation/start` | Start a session and get the AI's opening message |
-| POST | `/interview_session/{session_id}/conversation/message` | Send a candidate message and receive the AI's reply |
-
-### Evaluation — `/api/candidate`
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/candidate/sessions/{session_id}/evaluate` | Trigger LLM-based evaluation of a completed session |
-| GET | `/candidate/sessions/{session_id}/result` | Retrieve the evaluation report |
-
----
-
-## User Roles and Flows
-
-The system has two distinct roles, each with a separate UI layout and a dedicated set of routes.
-
-### Admin
-
-1. Log in at `/login`.
-2. Navigate to `/admin/interviews` to create an interview, specifying job position, seniority level, and the number of questions.
-3. Trigger question generation. The LLM produces role-appropriate technical questions and persists them to the database.
-4. When the interview is in `ready` state, assign one or more candidates by user ID. This creates a session record for each candidate.
-
-### Candidate
-
-1. Log in at `/login`.
-2. Navigate to `/candidate/interviews` to view assigned sessions.
-3. Open the instructions page for a session, then proceed to the workspace.
-4. In the conversational workspace, the AI speaks the first question aloud using the browser's `SpeechSynthesis` API. The candidate responds via microphone using the browser's `SpeechRecognition` API. After a period of silence is detected, the transcript is sent to the backend and the AI replies.
-5. When the session ends, the candidate triggers evaluation and views the result at `/candidate/result/:sessionId`.
-
----
-
-## Key Design Decisions
-
-**Cookie-based authentication.** JWTs are stored in `httpOnly` cookies rather than `localStorage`. This prevents XSS attacks from reading the token directly. The tradeoff is that cross-origin requests require the `credentials: "include"` flag and a matching CORS policy on the server, both of which are already configured.
-
-**Repository pattern on the backend.** Database queries are isolated in `repositories/`, business rules live in `services/`, and route handlers in `api/` deal only with request and response concerns. This keeps each layer independently testable and prevents business logic from leaking into route handlers.
-
-**Stable voice recognition lifecycle.** The `useVoiceConversation` hook owns the `SpeechRecognition` instance for its entire lifetime. The `onTranscriptFinalized` callback is stored in a ref internally, so the recognition object is never torn down and recreated when the parent component re-renders. Chrome terminates active recognition sessions whenever the underlying object is garbage-collected, making this pattern essential for a reliable microphone experience.
-
-**Rate limiting.** SlowAPI middleware is applied globally. The limiter instance is defined in `utils/rate_limit.py` and attached to `app.state`, which makes it available for per-route overrides when stricter limits are needed on specific endpoints.
-
-**LangChain abstraction.** The `ai/` module wraps the HuggingFace endpoint behind a standard `ChatHuggingFace` interface. Swapping the underlying model only requires changing the `repo_id` in `llm.py`. The chains, prompt templates, and structured output schemas remain unchanged.
+# Start the Vite development server
+npm run dev
+```
+The frontend application is available at: [http://localhost:5173](http://localhost:5173)
