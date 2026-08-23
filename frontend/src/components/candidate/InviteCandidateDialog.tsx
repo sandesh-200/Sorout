@@ -58,8 +58,10 @@ export default function InviteCandidateDialog({
       ).unwrap();
 
       toast.success("Join link created successfully");
-    } catch (error: any) {
-      toast.error(error || "Failed to generate link");
+    } catch (error: unknown) {
+      const errorMessage =
+        typeof error === "string" ? error : "Failed to generate link";
+      toast.error(errorMessage);
     }
   };
 
@@ -99,7 +101,6 @@ export default function InviteCandidateDialog({
             {loading ? "Generating..." : "Generate New Link"}
           </Button>
 
-          {/* Native scroll container replacing Radix ScrollArea */}
           <div className="h-64 w-full rounded-md border p-2 overflow-y-auto overflow-x-hidden">
             {joinLinks.length === 0 ? (
               <div className="flex items-center justify-center h-full text-muted-foreground text-sm">
@@ -112,7 +113,6 @@ export default function InviteCandidateDialog({
                     key={link.id}
                     className="flex items-center justify-between p-3 border rounded-md gap-2 w-full min-w-0"
                   >
-                    {/* Explicit break-all guarantees text forces layout wrap/truncation inside flex */}
                     <div className="min-w-0 flex-1 overflow-hidden">
                       <p className="truncate text-xs font-mono text-muted-foreground block w-full">
                         {link.token
@@ -121,7 +121,6 @@ export default function InviteCandidateDialog({
                       </p>
                     </div>
 
-                    {/* Action buttons fixed width */}
                     <div className="flex gap-1.5 shrink-0">
                       <Button
                         size="icon"

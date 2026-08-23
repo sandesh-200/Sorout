@@ -8,7 +8,7 @@ export const getJoinLinks = createAsyncThunk(
     try {
       const response = await adminJoinLinkAPI.getJoinLinks(orgId);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const axiosError = error as AxiosError<{ detail: string }>;
       return rejectWithValue(
         axiosError.response?.data?.detail || "Failed to fetch join links"
@@ -28,7 +28,7 @@ export const createJoinLink = createAsyncThunk(
         expires_at,
       });
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const axiosError = error as AxiosError<{ detail: string }>;
       return rejectWithValue(
         axiosError.response?.data?.detail || "Failed to create join link"
@@ -46,7 +46,7 @@ export const deactivateJoinLink = createAsyncThunk(
     try {
       await adminJoinLinkAPI.deactivateJoinLink(orgId, linkId);
       return linkId;
-    } catch (error: any) {
+    } catch (error: unknown) {
       const axiosError = error as AxiosError<{ detail: string }>;
       return rejectWithValue(
         axiosError.response?.data?.detail || "Failed to deactivate join link"

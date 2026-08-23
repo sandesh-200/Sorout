@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getMe } from "../api/auth";
 import { AuthContext } from "./AuthContext";
 import type {
@@ -12,7 +12,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const [loading, setLoading] = useState(true);
     const [activeOrg, setActiveOrg] = useState<MembershipInfo | null>(null);
 
-    const fetchUser = async () => {
+    const fetchUser = useCallback(async () => {
         try {
             const data = await getMe();
             setUser(data);
@@ -28,11 +28,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } finally {
             setLoading(false);
         }
-    };
+    }, [activeOrg]);
 
     useEffect(() => {
         fetchUser();
-    }, []);
+    }, [fetchUser]);
 
     return (
         <AuthContext.Provider
