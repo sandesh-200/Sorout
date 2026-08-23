@@ -1,21 +1,16 @@
 import { createSlice, isPending, isRejected } from "@reduxjs/toolkit";
+import type { AdminCandidateState } from "./candidateTypes";
+import { getAllCandidates, getAvailableCandidates } from "./candidateThunk";
 
-import type { CandidateState } from "./candidateTypes";
-
-import { getMyInterviews, startInterview } from "./candidateThunk";
-
-const initialState: CandidateState = {
-  interviews: [],
-
-  session:null,
-
+const initialState: AdminCandidateState = {
+  candidates: [],
+  availableCandidates: [],
   loading: false,
-
   error: null,
 };
 
 const candidateSlice = createSlice({
-  name: "candidate",
+  name: "adminCandidate",
 
   initialState,
 
@@ -23,54 +18,34 @@ const candidateSlice = createSlice({
     clearCandidateError(state) {
       state.error = null;
     },
+    clearAvailableCandidates(state) {
+      state.availableCandidates = [];
+    },
   },
 
   extraReducers: (builder) => {
-    builder.addCase(
-      getMyInterviews.fulfilled,
-      (state, action) => {
-        state.loading = false;
-        state.interviews = action.payload;
-      }
-    );
+    builder.addCase(getAllCandidates.fulfilled, (state, action) => {
+      state.loading = false;
+      state.candidates = action.payload;
+    });
 
-    builder.addCase(
-  startInterview.fulfilled,
-  (state, action) => {
-    state.loading = false;
+    builder.addCase(getAvailableCandidates.fulfilled, (state, action) => {
+      state.loading = false;
+      state.availableCandidates = action.payload;
+    });
 
-    state.session = action.payload;
+    builder.addMatcher(isPending(getAllCandidates, getAvailableCandidates), (state) => {
+      state.loading = true;
+      state.error = null;
+    });
 
-    const interview = state.interviews.find(
-      (i) => i.session_id === action.payload.id
-    );
-
-    if (interview) {
-      interview.status = action.payload.status;
-    }
-  }
-);
-
-    builder.addMatcher(
-      isPending(getMyInterviews,startInterview),
-      (state) => {
-        state.loading = true;
-        state.error = null;
-      }
-    );
-
-    builder.addMatcher(
-      isRejected(getMyInterviews,startInterview),
-      (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      }
-    );
+    builder.addMatcher(isRejected(getAllCandidates, getAvailableCandidates), (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
   },
 });
 
-export const {
-  clearCandidateError,
-} = candidateSlice.actions;
+export const { clearCandidateError, clearAvailableCandidates } = candidateSlice.actions;
 
 export default candidateSlice.reducer;

@@ -12,7 +12,7 @@ export default function InterviewInstructionsPage() {
 
   const parsedSessionId = Number(sessionId);
   const interview = useSelector((state: RootState) =>
-    state.candidate.interviews.find((i) => i.session_id === parsedSessionId)
+    state.interview.candidateInterviews.find((i) => i.session_id === parsedSessionId)
   );
 
   const handleCancel = () => {

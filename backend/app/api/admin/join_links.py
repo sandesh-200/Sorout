@@ -11,13 +11,13 @@ from schemas.organization_join_link import (
 )
 
 router = APIRouter(
-    prefix="/organizations",
-    tags=["Organization Join Links"],
+    prefix="/join-links",
+    tags=["Admin - Join Links"],
 )
 
 
 @router.post(
-    "/{organization_id}/join-links",
+    "/{organization_id}",
     response_model=OrganizationJoinLinkResponse,
 )
 def create_join_link(
@@ -43,7 +43,7 @@ def create_join_link(
     }
 
 @router.get(
-    "/{organization_id}/join-links",
+    "/{organization_id}",
     response_model=list[OrganizationJoinLinkListResponse],
 )
 def get_join_links(
@@ -58,7 +58,7 @@ def get_join_links(
     )
 
 @router.delete(
-    "/{organization_id}/join-links/{link_id}",
+    "/{organization_id}/{link_id}",
     status_code=204,
 )
 def deactivate_join_link(

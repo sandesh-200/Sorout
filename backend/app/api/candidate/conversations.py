@@ -12,13 +12,13 @@ from services.conversation import ConversationService
 from services.user import candidate_required
 
 router = APIRouter(
-    prefix="/interview_session",
-    tags=["Conversation"],
+    prefix="/conversations",
+    tags=["Candidate-Conversations"],
 )
 
 
 @router.post(
-    "/{session_id}/conversation/start",
+    "/{session_id}/start",
     response_model=ConversationStartResponse,
 )
 def start_conversation(
@@ -33,7 +33,7 @@ def start_conversation(
     )
 
 @router.post(
-    "/{session_id}/conversation/message",
+    "/{session_id}/message",
     response_model=ConversationMessageResponse,
 )
 def send_message(

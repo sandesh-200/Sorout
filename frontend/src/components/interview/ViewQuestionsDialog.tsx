@@ -21,7 +21,7 @@ export default function ViewQuestionsDialog({
   onOpenChange,
   interview,
 }: ViewQuestionsDialogProps) {
-  const { questions, loading } = useAppSelector((state) => state.interview);
+  const { questions, loading } = useAppSelector((state) => state.question);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

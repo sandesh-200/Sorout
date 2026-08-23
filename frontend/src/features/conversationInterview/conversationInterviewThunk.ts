@@ -5,17 +5,14 @@ import { conversationInterviewAPI } from "./conversationInterviewAPI";
 import type {
   ConversationStartResponse,
   ConversationMessageResponse,
-  InterviewEvaluation,
 } from "./conversationInterviewTypes";
 
 interface ApiError {
   detail: string;
 }
 
-/**
- * Starts interview.
- * Returns the very first AI message.
- */
+
+
 export const startConversation = createAsyncThunk<
   ConversationStartResponse,
   number,
@@ -42,10 +39,7 @@ export const startConversation = createAsyncThunk<
   }
 );
 
-/**
- * Sends candidate message.
- * Returns AI reply + completed flag.
- */
+
 export const sendMessage = createAsyncThunk<
   ConversationMessageResponse,
   {
@@ -71,35 +65,6 @@ export const sendMessage = createAsyncThunk<
       return rejectWithValue(
         err.response?.data.detail ??
           "Failed to send message."
-      );
-    }
-  }
-);
-
-/**
- * Evaluate completed interview.
- */
-export const evaluateInterview = createAsyncThunk<
-  InterviewEvaluation,
-  number,
-  { rejectValue: string }
->(
-  "conversation/evaluateInterview",
-
-  async (sessionId, { rejectWithValue }) => {
-    try {
-      const response =
-        await conversationInterviewAPI.evaluateInterview(
-          sessionId
-        );
-
-      return response.data;
-    } catch (error) {
-      const err = error as AxiosError<ApiError>;
-
-      return rejectWithValue(
-        err.response?.data.detail ??
-          "Failed to evaluate interview."
       );
     }
   }

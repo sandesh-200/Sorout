@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/app/hooks";
-import { getAvailableCandidates, assignCandidates } from "@/features/interview/interviewThunk";
-import { clearAvailableCandidates } from "@/features/interview/interviewSlice"; 
+import { assignCandidates } from '@/features/interview/interviewThunk';
+import { getAvailableCandidates } from '@/features/candidate/candidateThunk';
+import { clearAvailableCandidates } from "@/features/candidate/candidateSlice";
 import type { Interview } from "@/features/interview/interviewTypes";
 import { toast } from "sonner";
 import { Search, UserPlus, Users, Loader2, Mail } from "lucide-react";
@@ -33,8 +34,8 @@ export default function AssignCandidateDialog({
 }: AssignCandidateDialogProps) {
   const dispatch = useAppDispatch();
   
-  const availableCandidates = useAppSelector((state) => state.interview.availableCandidates) || [];
-  const isGlobalLoading = useAppSelector((state) => state.interview.loading);
+  const availableCandidates = useAppSelector((state) => state.candidate.availableCandidates) || [];
+  const isGlobalLoading = useAppSelector((state) => state.interview.loading || state.candidate.loading);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState<number[]>([]);

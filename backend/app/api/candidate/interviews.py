@@ -2,24 +2,20 @@ from typing import List
 
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-
 from core.database import get_db
-
 from models.user import User
-
 from services.user import candidate_required
 from services.interview_session import InterviewSessionService
-
 from schemas.interview_session import CandidateInterviewResponse
 
 
+
 router = APIRouter(
-    prefix="/candidate",
-    tags=["Candidate"],
+    prefix="/interviews",tags=["Candidate-Interviews"]
 )
 
 @router.get(
-    "/interviews",
+    "",
     response_model=List[CandidateInterviewResponse],
 )
 def get_my_interviews(

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TARGET="${1:-.}"
 
-tree "$ROOT" \
+tree "$TARGET" \
   -a \
-  -I 'node_modules|venv|.venv|__pycache__|*.pyc|.git|dist|build' 
+  -I 'node_modules|venv|.venv|__pycache__|*.pyc|.git|dist|build|.vite'sh 

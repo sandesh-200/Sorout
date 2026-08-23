@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 from core.database import get_db
 from models.user import User
 from repositories.user_repository import UserRepository
+from repositories.candidate_repository import CandidateRepository
 from repositories.organization_membership_repository import OrganizationMembershipRepository
 from models.organization_membership import MembershipRole
 from schemas.user import UserOnboardingRequest
@@ -21,16 +22,6 @@ class UserService:
     def create_user(db: Session, email: str, password: str, name: str = ""):
         user = User(name=name, email=email, password_hash=hash_password(password))
         return UserRepository.create(db=db, user=user)
-
-    @staticmethod
-    def get_all_candidates(db: Session, organization_id: int):
-        return UserRepository.get_all_candidates(db=db, organization_id=organization_id)
-
-    @staticmethod
-    def get_available_candidates(db: Session, interview_id: int, organization_id: int):
-        return UserRepository.get_available_candidates(
-            db=db, interview_id=interview_id, organization_id=organization_id
-        )
 
 
     @staticmethod
@@ -154,10 +145,6 @@ def admin_required(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> User:
-    """
-    Checks that the user has AT LEAST ONE admin membership.
-    The specific org check happens in the endpoint using current_user._jwt_org_id.
-    """
     from models.organization_membership import MembershipRole
     admin_memberships = [
         m for m in current_user.memberships if m.role == MembershipRole.admin

@@ -9,7 +9,6 @@ from repositories.organization_membership_repository import (
     OrganizationMembershipRepository,
 )
 
-from schemas.question import InterviewQuestionResponse
 from schemas.interview import (
     AssignCandidatesResponse,
     AssignCandidatesRequest,
@@ -17,13 +16,12 @@ from schemas.interview import (
     InterviewResponse,
     InterviewUpdate,
 )
-from schemas.common import MessageResponse
 from services.interview import InterviewService
 
 
 router = APIRouter(
     prefix="/interviews",
-    tags=["Interviews"],
+    tags=["Admin-Interviews"],
 )
 
 
@@ -130,41 +128,6 @@ def delete_interview(
         organization_id=org_id,
     )
 
-
-@router.post(
-    "/{interview_id}/generate-questions",
-    response_model=MessageResponse,
-)
-def generate_questions(
-    interview_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    org_id = get_admin_org_context(db, current_user)
-
-    return InterviewService.generate_questions(
-        db=db,
-        interview_id=interview_id,
-        organization_id=org_id,
-    )
-
-
-@router.get(
-    "/{interview_id}/questions",
-    response_model=list[InterviewQuestionResponse],
-)
-def get_interview_questions(
-    interview_id: int,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    org_id = get_admin_org_context(db, current_user)
-
-    return InterviewService.get_interview_questions(
-        db=db,
-        interview_id=interview_id,
-        organization_id=org_id,
-    )
 
 
 @router.post(

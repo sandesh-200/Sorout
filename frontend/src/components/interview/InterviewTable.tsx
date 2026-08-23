@@ -30,7 +30,8 @@ import CreateInterviewDialog from "./CreateInterviewDialog"
 import type { Interview } from "@/features/interview/interviewTypes"
 import { toast } from "sonner"
 import { useAppDispatch, useAppSelector } from "@/app/hooks"
-import { deleteInterview, generateInterviewQuestions, getInterviewQuestions } from "@/features/interview/interviewThunk"
+import { deleteInterview, getAllInterviews } from "@/features/interview/interviewThunk"
+import { generateQuestions, getQuestions } from "@/features/question/questionThunk"
 import DeleteConfirmDialog from "../shared/delete-confirm-dialog"
 import ViewQuestionsDialog from "./ViewQuestionsDialog"
 import AssignCandidateDialog from "./AssignCandidateDialog"
@@ -57,7 +58,7 @@ export function InterviewTable<TData, TValue>({
 
   const globalLoading = useAppSelector((state) => state.interview.loading);
 
-  const generatingId = useAppSelector((state) => state.interview.generatingId);
+  const generatingId = useAppSelector((state) => state.question.generatingId);
 
 
 const dispatch = useAppDispatch();
@@ -95,20 +96,29 @@ const dispatch = useAppDispatch();
 
     toast.info(`Starting AI question generation for "${interview.title}"...`);
     
-    const result = await dispatch(generateInterviewQuestions(interview.id));
+const result = await dispatch(
+  generateQuestions(interview.id)
+);
 
-    if (generateInterviewQuestions.fulfilled.match(result)) {
-      toast.success("AI interview questions generated successfully! Status updated to Ready.");
-    } else {
-      toast.error((result.payload as string) ?? "Failed to generate AI questions.");
-    }
+if (generateQuestions.fulfilled.match(result)) {
+  toast.success(
+    "AI interview questions generated successfully!"
+  );
+  dispatch(getAllInterviews());
+} else {
+  toast.error(
+    (result.payload as string) ??
+      "Failed to generate AI questions."
+  );
+}
   };
 
-  const handleViewQuestions = (interview: Interview) => {
-    setViewingInterview(interview);
-    setIsQuestionsOpen(true);
-    dispatch(getInterviewQuestions(interview.id));
-  };
+const handleViewQuestions = (interview: Interview) => {
+  setViewingInterview(interview);
+  setIsQuestionsOpen(true);
+
+  dispatch(getQuestions(interview.id));
+};
 
   const handleAssignInterview = (interview: Interview) => {
   if (interview.status !== "ready") {
