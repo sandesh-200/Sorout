@@ -7,7 +7,8 @@ from services.user import get_current_user
 from services.organization_join_link import OrganizationJoinLinkService
 from schemas.organization_join_link import (
     OrganizationJoinLinkResponse,
-    OrganizationJoinLinkListResponse
+    OrganizationJoinLinkListResponse,
+    CreateJoinLinkRequest
 )
 
 router = APIRouter(
@@ -22,6 +23,7 @@ router = APIRouter(
 )
 def create_join_link(
     organization_id: int,
+    payload:CreateJoinLinkRequest=CreateJoinLinkRequest(),
     expires_at: datetime | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
