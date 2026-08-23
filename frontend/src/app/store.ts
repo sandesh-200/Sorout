@@ -6,6 +6,8 @@ import userReducer from '@/features/user/userSlice'
 import evaluationReducer from '@/features/evaluation/evaluationSlice'
 import questionReducer from '@/features/question/questionSlice'
 
+import adminJoinLinkReducer from '@/features/joinLink/joinLinkSlice'
+
 export const store = configureStore({
     reducer: {
         interview: interviewReducer,
@@ -13,7 +15,8 @@ export const store = configureStore({
         conversationInterview: conversationInterviewReducer,
         user:userReducer,
         evaluation:evaluationReducer,
-        question:questionReducer
+        question:questionReducer,
+        adminJoinLink: adminJoinLinkReducer
     }
 })
 
