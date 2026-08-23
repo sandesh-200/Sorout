@@ -1,3 +1,4 @@
+import type { InterviewSessionStatus } from "../candidate/candidateTypes";
 export type InterviewStatus =
   | "draft"
   | "ready"
@@ -5,7 +6,6 @@ export type InterviewStatus =
   | "completed"
   | "cancelled";
 
-import type { InterviewSessionStatus, Candidate } from "../candidate/candidateTypes";
 
 export interface Interview {
   id: number;

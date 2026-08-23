@@ -46,8 +46,10 @@ export default function ConversationalWorkspace() {
   const [manualInput, setManualInput] = useState("");
   const [showTextInput, setShowTextInput] = useState(false);
 
-  const { messages, completed, loading, sendingMessage, evaluating, evaluation } =
+  const { messages, completed, loading, sendingMessage } =
     useSelector((state: RootState) => state.conversationInterview);
+
+  const { loading: evaluating, evaluation } = useSelector((state: RootState) => state.evaluation);
 
   const { isListening, transcript, isSupported, startListening, stopListening, speakText } =
     useVoiceConversation({

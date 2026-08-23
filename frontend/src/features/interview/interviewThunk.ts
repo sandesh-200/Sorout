@@ -1,6 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import type { AssignCandidatesRequest, AssignCandidatesResponse, CreateInterviewRequest, Interview, UpdateInterviewRequest, CandidateInterview } from "./interviewTypes";
-import type { Candidate } from "../candidate/candidateTypes";
 import { interviewAPI } from "./InterviewAPI";
 import type { AxiosError } from "axios";
 
@@ -143,4 +142,4 @@ export const getMyInterviews = createAsyncThunk<
     }
   }
 );
-
+
