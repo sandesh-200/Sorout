@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "@/app/store";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,6 +13,7 @@ import { evaluateInterview } from '@/features/evaluation/evaluationThunk'
 import {
   addCandidateMessage,
   setSessionId,
+  resetConversation
 } from "@/features/conversationInterview/conversationInterviewSlice";
 import { useVoiceConversation } from "@/hooks/useVoiceConversation";
 
@@ -25,17 +26,19 @@ import {
   Volume2,
   Loader2,
   CheckCircle2,
-  Bot,
   User,
   Send,
   AlertCircle,
   Award,
 } from "lucide-react";
+import { InterviewerAvatar } from "@/components/interviewConversation/InterviewerAvatar";
+
 
 export default function ConversationalWorkspace() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const numericSessionId = Number(sessionId);
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate()
 
   const initializedRef = useRef(false);
   const handleTranscriptFinalizedRef = useRef<(text: string) => void>(() => {});
@@ -58,7 +61,7 @@ export default function ConversationalWorkspace() {
       }, []),
       isAiSpeaking,
       isProcessing: sendingMessage,
-      ttsApiEndpoint: "http://localhost:8000/api/tts",
+      ttsApiEndpoint: `${import.meta.env.VITE_API_URL || "http://localhost:8000/api"}/tts`,
     });
 
   // Smooth scroll anchor function (prevents jitter during audio streaming or state changes)
@@ -120,6 +123,7 @@ export default function ConversationalWorkspace() {
 
   // Start initial interview session on page mount
   useEffect(() => {
+    dispatch(resetConversation());
     if (numericSessionId && !initializedRef.current) {
       initializedRef.current = true;
       dispatch(setSessionId(numericSessionId));
@@ -145,11 +149,16 @@ export default function ConversationalWorkspace() {
         }
       });
     }
+
+    return ()=>{
+      dispatch(resetConversation())
+    }
   }, [numericSessionId, dispatch, speakText, startListening]);
 
   const handleCompleteInterview = () => {
     if (numericSessionId) {
-      dispatch(evaluateInterview(numericSessionId));
+     dispatch(evaluateInterview(numericSessionId));
+     navigate(`/candidate/result/${numericSessionId}`);
     }
   };
 
@@ -182,9 +191,15 @@ export default function ConversationalWorkspace() {
       {/* Workspace Context Header */}
       <header className="h-16 border-b border-border/60 px-6 flex items-center justify-between bg-card/40 backdrop-blur-md shrink-0 z-10">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-            <Bot className="h-5 w-5" />
-          </div>
+ <InterviewerAvatar size="sm" speaking={isAiSpeaking} thinking={sendingMessage} />
+ <div>
+   <div className="flex items-center gap-2">
+     <h1 className="text-sm font-semibold tracking-tight">Alex</h1>
+     <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">AI Interviewer</span>
+     <span className="text-xs text-muted-foreground font-mono opacity-50">#{numericSessionId}</span>
+   </div>
+   <p className="text-[11px] text-muted-foreground">Powered by Sorout AI Assessment Engine</p>
+ </div>
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-sm font-semibold tracking-tight">Technical Interview Workspace</h1>
@@ -232,15 +247,12 @@ export default function ConversationalWorkspace() {
               transition={{ duration: 0.25, ease: "easeOut" }}
               className={`flex items-start gap-3.5 ${isUser ? "flex-row-reverse" : "flex-row"}`}
             >
-              <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center shrink-0 text-xs shadow-sm border ${
-                  isUser
-                    ? "bg-primary text-primary-foreground border-primary"
-                    : "bg-card text-foreground border-border"
-                }`}
-              >
-                {isUser ? <User className="h-4 w-4" /> : <Bot className="h-4 w-4 text-primary" />}
-              </div>
+ {isUser
+   ? <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground border border-primary flex items-center justify-center shrink-0 shadow-sm">
+       <User className="h-4 w-4" />
+     </div>
+   : <InterviewerAvatar size="sm" />
+ }
 
               <div className={`space-y-1.5 max-w-[82%] ${isUser ? "items-end" : "items-start"}`}>
                 <div
@@ -248,7 +260,7 @@ export default function ConversationalWorkspace() {
                     isUser ? "text-right text-muted-foreground" : "text-muted-foreground"
                   }`}
                 >
-                  {isUser ? "Candidate Answer" : "Interviewer Question"}
+                  {isUser ? "You" : "Sabrina"}
                 </div>
 
                 <div
@@ -277,13 +289,11 @@ export default function ConversationalWorkspace() {
             aria-label="Interviewer is thinking"
             className="flex items-start gap-3.5 flex-row"
           >
-            <div className="h-8 w-8 rounded-full bg-card text-foreground border border-border flex items-center justify-center shrink-0 text-xs shadow-xs">
-              <Bot className="h-4 w-4 text-primary/70" />
-            </div>
+             <InterviewerAvatar size="sm" thinking />
 
             <div className="space-y-1.5 max-w-[82%]">
               <div className="text-[11px] font-medium tracking-wide uppercase px-1 text-muted-foreground">
-                Interviewer
+                Sabrina is thinking ...
               </div>
 
               <div className="rounded-2xl rounded-tl-xs px-4 py-3 text-sm bg-card text-muted-foreground border border-border/80 shadow-xs flex items-center gap-2">
@@ -305,15 +315,13 @@ export default function ConversationalWorkspace() {
             animate={{ opacity: 1, y: 0 }}
             className="flex items-start gap-3.5 flex-row"
           >
-            <div className="h-8 w-8 rounded-full bg-card border border-primary/30 flex items-center justify-center shrink-0 text-xs shadow-xs text-primary">
-              <Bot className="h-4 w-4 animate-pulse" />
-            </div>
+            <InterviewerAvatar size="sm" speaking />
 
             <div className="space-y-1.5 max-w-[82%]">
-              <div className="text-[11px] font-medium tracking-wide text-primary flex items-center gap-1.5 px-1">
-                <Volume2 className="h-3 w-3 animate-bounce" />
-                Interviewer Speaking...
-              </div>
+ <div className="text-[11px] font-medium tracking-wide text-violet-600 dark:text-violet-400 flex items-center gap-1.5 px-1">
+   <Volume2 className="h-3 w-3 animate-bounce" />
+   Sabrina is speaking...
+ </div>
 
               <div className="rounded-2xl rounded-tl-xs px-4 py-3 text-sm leading-relaxed bg-card border border-primary/20 text-card-foreground shadow-sm">
                 <p className="whitespace-pre-wrap inline">{streamingAiText}</p>
@@ -364,12 +372,12 @@ export default function ConversationalWorkspace() {
                 ) : isAiSpeaking ? (
                   <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary">
                     <Volume2 className="h-3.5 w-3.5 animate-bounce" />
-                    AI Interviewer speaking
+                    Sabrina is speaking ...
                   </span>
                 ) : sendingMessage ? (
                   <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-muted border border-border text-muted-foreground">
                     <span className="h-1.5 w-1.5 rounded-full bg-primary/60 animate-pulse" />
-                    Interviewer considering response
+                    Sabrina is thinking ...
                   </span>
                 ) : (
                   <span className="text-muted-foreground">Microphone inactive</span>

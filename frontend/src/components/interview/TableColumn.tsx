@@ -134,11 +134,16 @@ export const columns: ColumnDef<Interview>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0 cursor-pointer" disabled={isGeneratingThisRow}>
+            <Button
+              variant="ghost"
+              className="h-8 w-8 p-0 cursor-pointer"
+              disabled={isGeneratingThisRow}
+              onClick={(e) => e.stopPropagation()}
+            >
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end" className="w-48" onClick={(e) => e.stopPropagation()}>
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuSeparator />
 

@@ -77,8 +77,9 @@ function getActionButtonDetails(status: string) {
     case "not_started":
       return { label: "Start Interview", variant: "default" as const, active: true };
     case "completed":
-    case "evaluated":
       return { label: "View Results", variant: "outline" as const, active: false };
+    case "evaluated":
+      return { label: "View Results", variant: "default" as const, active: true };
     case "cancelled":
       return { label: "Cancelled", variant: "ghost" as const, active: false };
     default:

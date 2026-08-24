@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from fastapi import HTTPException
 from models.interview import InterviewStatus
 from repositories.interview_repository import InterviewRepository
-from schemas.interview import InterviewCreate,InterviewUpdate,AssignCandidatesResponse
+from schemas.interview import InterviewCreate,InterviewUpdate,AssignCandidatesResponse,InterviewResponse
 from schemas.question import InterviewQuestionResponse
 from repositories.interview_question_repository import InterviewQuestionRepository
 from repositories.question_repository import QuestionRepository
@@ -32,7 +32,20 @@ class InterviewService:
     
     @staticmethod
     def get_all_interviews(db:Session, organization_id:int):
-         return InterviewRepository.get_all(db, organization_id=organization_id)
+         interviews = InterviewRepository.get_all(
+             db,
+             organization_id=organization_id,
+         )
+         results = []
+         for interview in interviews:
+             response = InterviewResponse.model_validate(interview)
+             response.has_questions = QuestionRepository.has_questions(
+                 db,
+                 interview.id
+             )
+             results.append(response)
+         return results
+    
     
     @staticmethod
     def get_interview(

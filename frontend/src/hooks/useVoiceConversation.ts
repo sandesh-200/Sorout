@@ -11,7 +11,7 @@ export function useVoiceConversation({
   onTranscriptFinalized,
   isAiSpeaking,
   isProcessing,
-  ttsApiEndpoint = "http://localhost:8000/api/tts",
+  ttsApiEndpoint = `${import.meta.env.VITE_API_URL || "http://localhost:8000/api"}/tts`,
 }: UseVoiceConversationProps) {
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");

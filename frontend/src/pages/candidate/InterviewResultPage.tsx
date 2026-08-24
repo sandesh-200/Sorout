@@ -4,7 +4,7 @@ import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import axios from "axios";
+import { isAxiosError } from "axios";
 import { getApiErrorMessage } from "@/utils/api-error";
 import {
   Loader2,
@@ -74,7 +74,7 @@ export default function InterviewResultPage() {
       setProcessing(false);
       setLoading(false);
     } catch (error: unknown) {
-      if (axios.isAxiosError(error) && error.response?.status === 404) {
+      if (isAxiosError(error) && error.response?.status === 404) {
         setProcessing(true);
         setLoading(false);
       } else {
@@ -178,7 +178,7 @@ export default function InterviewResultPage() {
 
         {/* Score Hero Card */}
         <Card className="overflow-hidden">
-          <div className="bg-gradient-to-br from-primary/5 via-primary/10 to-transparent p-8">
+          <div className="bg-linear-to-br from-primary/5 via-primary/10 to-transparent p-8">
             <div className="flex flex-col sm:flex-row items-center gap-8">
 
               {/* Circular score gauge */}

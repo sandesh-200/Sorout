@@ -16,7 +16,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         try {
             const data = await getMe();
             setUser(data);
-            if (data.memberships.length > 0 && !activeOrg) {
+            if (data.memberships.length > 0) {
                 setActiveOrg(data.memberships[0]);
             }
 
@@ -28,7 +28,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         } finally {
             setLoading(false);
         }
-    }, [activeOrg]);
+    }, []);
 
     useEffect(() => {
         fetchUser();

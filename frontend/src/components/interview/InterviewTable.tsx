@@ -35,19 +35,27 @@ import { generateQuestions, getQuestions } from "@/features/question/questionThu
 import DeleteConfirmDialog from "../shared/delete-confirm-dialog"
 import ViewQuestionsDialog from "./ViewQuestionsDialog"
 import AssignCandidateDialog from "./AssignCandidateDialog"
+import { InterviewSetupChecklist } from "./InterviewSetupChecklist"
 
-interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+interface DataTableProps {
+  columns: ColumnDef<Interview, unknown>[]
+  data: Interview[]
 }
 
-export function InterviewTable<TData, TValue>({
+
+export function InterviewTable({
   columns,
   data,
-}: DataTableProps<TData, TValue>) {
+}: DataTableProps) {
   const [isCreateOpen, setIsCreateOpen] = React.useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = React.useState(false);
   const [isQuestionsOpen, setIsQuestionsOpen] = React.useState(false);
+
+  const [expandedRowId, setExpandedRowId] = React.useState<number | null>(null);
+  // Tracks which interview just had questions generated so the checklist shows step-2
+  // checked immediately, even before getAllInterviews() returns fresh data
+  const [justGeneratedId, setJustGeneratedId] = React.useState<number | null>(null);
+
 
   const [isAssignOpen, setIsAssignOpen] = React.useState(false);
   const [assigningInterview, setAssigningInterview] = React.useState<Interview | null>(null);
@@ -61,7 +69,7 @@ export function InterviewTable<TData, TValue>({
   const generatingId = useAppSelector((state) => state.question.generatingId);
 
 
-const dispatch = useAppDispatch();
+  const dispatch = useAppDispatch();
   const handleOpenChange = (open: boolean) => {
     setIsCreateOpen(open);
     if (!open) setEditingInterview(null);
@@ -88,46 +96,45 @@ const dispatch = useAppDispatch();
   };
 
   const handleGenerateQuestions = async (interview: Interview) => {
-    // Safety check matching your business rules
     if (interview.status !== "draft") {
       toast.error("Questions can only be generated for draft sessions.");
       return;
     }
 
+    setExpandedRowId(interview.id);
     toast.info(`Starting AI question generation for "${interview.title}"...`);
-    
-const result = await dispatch(
-  generateQuestions(interview.id)
-);
 
-if (generateQuestions.fulfilled.match(result)) {
-  toast.success(
-    "AI interview questions generated successfully!"
-  );
-  dispatch(getAllInterviews());
-} else {
-  toast.error(
-    (result.payload as string) ??
-      "Failed to generate AI questions."
-  );
-}
+    const result = await dispatch(generateQuestions(interview.id));
+
+    if (generateQuestions.fulfilled.match(result)) {
+      toast.success("AI interview questions generated successfully!");
+
+      // Keep row expanded and set optimistic generated state
+      setJustGeneratedId(interview.id);
+      setExpandedRowId(interview.id);
+
+      // Refresh interviews list in background without closing checklist
+      await dispatch(getAllInterviews());
+    } else {
+      toast.error((result.payload as string) ?? "Failed to generate AI questions.");
+    }
   };
 
-const handleViewQuestions = (interview: Interview) => {
-  setViewingInterview(interview);
-  setIsQuestionsOpen(true);
+  const handleViewQuestions = (interview: Interview) => {
+    setViewingInterview(interview);
+    setIsQuestionsOpen(true);
 
-  dispatch(getQuestions(interview.id));
-};
+    dispatch(getQuestions(interview.id));
+  };
 
   const handleAssignInterview = (interview: Interview) => {
-  if (interview.status !== "ready") {
-    toast.error("Only interviews in 'Ready' status can be assigned to candidates.");
-    return;
-  }
-  setAssigningInterview(interview);
-  setIsAssignOpen(true);
-};
+    if (interview.status !== "ready") {
+      toast.error("Only interviews in 'Ready' status can be assigned to candidates.");
+      return;
+    }
+    setAssigningInterview(interview);
+    setIsAssignOpen(true);
+  };
 
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -141,8 +148,8 @@ const handleViewQuestions = (interview: Interview) => {
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    onSortingChange:setSorting,
-    getSortedRowModel:getSortedRowModel(),
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
     onColumnFiltersChange: setColumnFilters,
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
@@ -161,13 +168,13 @@ const handleViewQuestions = (interview: Interview) => {
         handleGenerateQuestions(interview);
       },
       onViewQuestions: (interview: Interview) => {
-        handleViewQuestions(interview); 
+        handleViewQuestions(interview);
       },
       onAssignInterview: (interview: Interview) => {
-      handleAssignInterview(interview);
+        handleAssignInterview(interview);
+      },
     },
-    },
-    state:{
+    state: {
       sorting,
       columnFilters,
       columnVisibility,
@@ -181,7 +188,7 @@ const handleViewQuestions = (interview: Interview) => {
   return (
     <div>
       <div className="flex items-center py-4">
-        
+
         <Input
           placeholder="Filter title "
           value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
@@ -191,105 +198,138 @@ const handleViewQuestions = (interview: Interview) => {
           className="max-w-52 mr-3"
         />
 
-          {/* 2. Filter by Status Dropdown Component */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 gap-2 cursor-pointer border-dashed">
-                <ListFilter className="h-4 w-4" />
-                Status: {currentStatusFilter ? <span className="font-semibold capitalize text-primary">{currentStatusFilter}</span> : "All"}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-40">
-              <DropdownMenuCheckboxItem
-                checked={currentStatusFilter === ""}
-                onClick={() => table.getColumn("status")?.setFilterValue(undefined)}
-                className="cursor-pointer"
-              >
-                All
-              </DropdownMenuCheckboxItem>
-              {["draft", "ready", "ongoing", "completed", "cancelled"].map((status) => (
-                <DropdownMenuCheckboxItem
-                  key={status}
-                  className="capitalize cursor-pointer"
-                  checked={currentStatusFilter === status}
-                  onClick={() => table.getColumn("status")?.setFilterValue(status)}
-                >
-                  {status}
-                </DropdownMenuCheckboxItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {/* Clear Filters Button (Shows up only if filters exist) */}
-          {columnFilters.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => table.resetColumnFilters()}
-              className="h-9 px-2 text-xs cursor-pointer text-muted-foreground hover:text-foreground"
-            >
-              Reset
+        {/* 2. Filter by Status Dropdown Component */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="h-9 gap-2 cursor-pointer border-dashed">
+              <ListFilter className="h-4 w-4" />
+              Status: {currentStatusFilter ? <span className="font-semibold capitalize text-primary">{currentStatusFilter}</span> : "All"}
             </Button>
-          )}
-      
-  <DataTableViewOptions table={table}/>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" className="w-40">
+            <DropdownMenuCheckboxItem
+              checked={currentStatusFilter === ""}
+              onClick={() => table.getColumn("status")?.setFilterValue(undefined)}
+              className="cursor-pointer"
+            >
+              All
+            </DropdownMenuCheckboxItem>
+            {["draft", "ready", "ongoing", "completed", "cancelled"].map((status) => (
+              <DropdownMenuCheckboxItem
+                key={status}
+                className="capitalize cursor-pointer"
+                checked={currentStatusFilter === status}
+                onClick={() => table.getColumn("status")?.setFilterValue(status)}
+              >
+                {status}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
 
-  <Button
-   onClick={() =>{ 
-    setEditingInterview(null)
-    setIsCreateOpen(true)
-   } }>Add Session</Button>
+        {/* Clear Filters Button (Shows up only if filters exist) */}
+        {columnFilters.length > 0 && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => table.resetColumnFilters()}
+            className="h-9 px-2 text-xs cursor-pointer text-muted-foreground hover:text-foreground"
+          >
+            Reset
+          </Button>
+        )}
+
+        <DataTableViewOptions table={table} />
+
+        <Button
+          onClick={() => {
+            setEditingInterview(null)
+            setIsCreateOpen(true)
+          }}>Add Session</Button>
       </div>
-    <div className="overflow-hidden rounded-md border mb-4">
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => {
-                return (
-                  <TableHead key={header.id}>
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
+      <div className="overflow-hidden rounded-md border mb-4">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => {
+                  return (
+                    <TableHead key={header.id}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
                           header.column.columnDef.header,
                           header.getContext()
                         )}
-                  </TableHead>
-                )
-              })}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+                    </TableHead>
+                  )
+                })}
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-    </div>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <React.Fragment key={row.id}>
+                  <TableRow
+                    key={row.id}
+                    data-state={row.getIsSelected() && "selected"}
+                    className={
+                      row.original.status === "draft" || justGeneratedId === row.original.id
+                        ? "cursor-pointer"
+                        : ""
+                    }
+                    onClick={() => {
+                      if (row.original.status === "draft" || justGeneratedId === row.original.id) {
+                        setExpandedRowId(
+                          expandedRowId === row.original.id ? null : row.original.id
+                        );
+                      }
+                    }}
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
 
-<DataTablePagination table={table}/>
+                  {/* Setup Checklist — shown for draft or just-generated ready interviews when expanded */}
+                  {(row.original.status === "draft" || justGeneratedId === row.original.id) &&
+                    expandedRowId === row.original.id && (
+                      <TableRow key={`${row.id}-checklist`}>
+                        <TableCell colSpan={columns.length} className="p-0">
+                          <InterviewSetupChecklist
+                            interview={row.original as Interview}
+                            isGenerating={generatingId === row.original.id}
+                            justGenerated={justGeneratedId === row.original.id}
+                            onGenerate={() => handleGenerateQuestions(row.original as Interview)}
+                            onAssign={() => handleAssignInterview(row.original as Interview)}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    )}
+                </React.Fragment>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-<CreateInterviewDialog open={isCreateOpen} onOpenChange={handleOpenChange} interviewToEdit={editingInterview} />
+      <DataTablePagination table={table} />
 
-<DeleteConfirmDialog
+      <CreateInterviewDialog open={isCreateOpen} onOpenChange={handleOpenChange} interviewToEdit={editingInterview} />
+
+      <DeleteConfirmDialog
         open={isDeleteOpen}
         onOpenChange={(open) => {
           setIsDeleteOpen(open);
@@ -301,7 +341,7 @@ const handleViewQuestions = (interview: Interview) => {
         onConfirm={handleExecuteDelete}
       />
 
-<ViewQuestionsDialog
+      <ViewQuestionsDialog
         open={isQuestionsOpen}
         onOpenChange={(open) => {
           setIsQuestionsOpen(open);
@@ -311,13 +351,13 @@ const handleViewQuestions = (interview: Interview) => {
       />
 
       <AssignCandidateDialog
-  open={isAssignOpen}
-  onOpenChange={(open) => {
-    setIsAssignOpen(open);
-    if (!open) setAssigningInterview(null);
-  }}
-  interview={assigningInterview}
-/>
+        open={isAssignOpen}
+        onOpenChange={(open) => {
+          setIsAssignOpen(open);
+          if (!open) setAssigningInterview(null);
+        }}
+        interview={assigningInterview}
+      />
 
     </div>
   )

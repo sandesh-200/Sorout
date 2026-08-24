@@ -1,13 +1,11 @@
 // InterviewInstructionsPage.tsx
 import { useNavigate, useParams } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch, RootState } from "@/app/store";
-import { startConversation } from "@/features/conversationInterview/conversationInterviewThunk";
+import {  useSelector } from "react-redux";
+import type {  RootState } from "@/app/store";
 import InterviewInstructions from "@/components/interviewConversation/InterviewInstructions";
 
 export default function InterviewInstructionsPage() {
   const navigate = useNavigate();
-  const dispatch = useDispatch<AppDispatch>();
   const { sessionId } = useParams<{ sessionId: string }>();
 
   const parsedSessionId = Number(sessionId);
@@ -21,15 +19,7 @@ export default function InterviewInstructionsPage() {
 
   const handleConfirm = async () => {
     if (!parsedSessionId) return;
-
-    try {
-      // Trigger conversation start API
-      await dispatch(startConversation(parsedSessionId)).unwrap();
-      // Redirect to the conversational workspace
-      navigate(`/candidate/workspace/${parsedSessionId}`);
-    } catch (err) {
-      console.error("Could not start conversation session:", err);
-    }
+    navigate(`/candidate/workspace/${parsedSessionId}`);
   };
 
   const title = interview

@@ -7,15 +7,11 @@ from ai.prompts.interview_evaluation import (
 
 from ai.llm import llm
 
-parser = PydanticOutputParser(
-    pydantic_object=InterviewEvaluation
-)
+structured_output = llm.with_structured_output(InterviewEvaluation)
 
-prompt = INTERVIEW_EVALUATION_PROMPT.partial(
-    format_instructions=parser.get_format_instructions()
-)
+prompt = INTERVIEW_EVALUATION_PROMPT
 
-chain = prompt | llm | parser
+chain = prompt | structured_output
 
 
 
