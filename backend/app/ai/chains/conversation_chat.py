@@ -2,6 +2,8 @@ from langchain_core.output_parsers import (
     PydanticOutputParser
 )
 
+from ai.utils.llm_executor import invoke_with_fallback
+
 from ai.llm import llm
 
 from ai.schemas.conversation_schema import (
@@ -19,11 +21,11 @@ parser = PydanticOutputParser(
     pydantic_object=ConversationResponse,
 )
 
-prompt = CONVERSATION_CHAT_PROMPT.partial(
-    format_instructions=parser.get_format_instructions(),
-)
+structured_llm = llm.with_structured_output(ConversationResponse)
 
-chain = prompt | llm | parser
+prompt = CONVERSATION_CHAT_PROMPT
+
+chain = prompt | structured_llm
 
 
 class ConversationChat:
@@ -35,6 +37,8 @@ class ConversationChat:
     ):
 
         context = ConversationContextService.build(interview=interview,messages=messages)
+
+        
 
         return chain.invoke(
     {

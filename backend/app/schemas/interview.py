@@ -21,7 +21,7 @@ class InterviewResponse(BaseModel):
     status: InterviewStatus
     created_by: int
     created_at: datetime
-
+    has_questions:bool = False
     model_config = ConfigDict(from_attributes=True)
 
 

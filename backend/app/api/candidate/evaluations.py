@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends,BackgroundTasks
 from sqlalchemy.orm import Session
 
 from core.database import get_db
@@ -16,12 +16,15 @@ router = APIRouter(
 @router.post("/{session_id}/evaluate")
 def evaluate(
     session_id: int,
+    background_tasks:BackgroundTasks,
     db: Session = Depends(get_db),
 ):
-    return EvaluationService.evaluate_session(
-        db=db,
-        session_id=session_id,
+    background_tasks.add_task(
+        EvaluationService.evaluate_session,
+        db=db,session_id=session_id
     )
+    
+    return {"message": "Evaluation started. Check back shortly for results."}
 
 @router.get(
     "/{session_id}/result",

@@ -212,29 +212,52 @@ export default function InterviewInstructions({
           </section>
 
           {/* Instruction List */}
-          <section className="space-y-2.5" aria-label="Session guidelines">
-            <h3 className="font-medium text-xs text-foreground">Session Guidelines</h3>
-            <ul className="space-y-2 text-xs text-muted-foreground leading-relaxed">
-              <li className="flex items-start gap-2">
-                <span className="select-none text-foreground/40">•</span>
-                <span>
-                  <strong className="text-foreground font-medium">Turn-taking dialogue:</strong> The AI interviewer speaks first. Listen to the entire prompt before responding.
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="select-none text-foreground/40">•</span>
-                <span>
-                  <strong className="text-foreground font-medium">Automatic turn completion:</strong> Pausing for 1 to 2 seconds of continuous silence submits your answer.
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="select-none text-foreground/40">•</span>
-                <span>
-                  <strong className="text-foreground font-medium">Quiet setting recommended:</strong> High background noise may prematurely trigger silence detection.
-                </span>
-              </li>
-            </ul>
-          </section>
+<section className="space-y-2.5" aria-label="Session guidelines">
+  <h3 className="font-medium text-xs text-foreground">Session Guidelines</h3>
+
+  <ul className="space-y-2 text-xs text-muted-foreground leading-relaxed">
+    <li className="flex items-start gap-2">
+      <span className="select-none text-foreground/40">•</span>
+      <span>
+        <strong className="text-foreground font-medium">
+          Your interviewer:
+        </strong>{" "}
+        You'll be interviewed by Sabrina, your virtual interviewer for this
+        session.
+      </span>
+    </li>
+
+    <li className="flex items-start gap-2">
+      <span className="select-none text-foreground/40">•</span>
+      <span>
+        <strong className="text-foreground font-medium">
+          Turn-taking dialogue:
+        </strong>{" "}
+        Sabrina speaks first. Listen to the entire prompt before responding.
+      </span>
+    </li>
+
+    <li className="flex items-start gap-2">
+      <span className="select-none text-foreground/40">•</span>
+      <span>
+        <strong className="text-foreground font-medium">
+          Automatic turn completion:
+        </strong>{" "}
+        Pausing for 1 to 2 seconds of continuous silence submits your answer.
+      </span>
+    </li>
+
+    <li className="flex items-start gap-2">
+      <span className="select-none text-foreground/40">•</span>
+      <span>
+        <strong className="text-foreground font-medium">
+          Quiet setting recommended:
+        </strong>{" "}
+        High background noise may prematurely trigger silence detection.
+      </span>
+    </li>
+  </ul>
+</section>
         </CardContent>
 
         <CardFooter className="flex items-center justify-between border-t border-border/60 px-6 py-4 bg-muted/10">

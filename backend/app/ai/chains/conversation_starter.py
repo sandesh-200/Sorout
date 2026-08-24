@@ -1,4 +1,5 @@
 from ai.llm import llm
+import re
 from ai.prompts.conversation_start import (
     CONVERSATION_START_PROMPT,
 )
@@ -18,5 +19,8 @@ class ConversationStarter:
                 "level": interview.seniority_level,
             }
         )
+        content = response.content.strip()
 
-        return response.content.strip()
+        content = re.sub(r"<\|.*?\|>", "", content).strip()
+
+        return content

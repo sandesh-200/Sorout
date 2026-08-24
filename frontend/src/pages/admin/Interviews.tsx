@@ -25,7 +25,7 @@ useEffect(() => {
     <>
     <div>
 
-  {interviews.length === 0 && loading ? (
+  {loading ? (
         <LoadingAnimation text="Loading Interviews..." />
       ) : error ? (
         <Error message={error} onRetry={()=>dispatch(getAllInterviews())} />

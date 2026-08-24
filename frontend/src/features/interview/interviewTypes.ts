@@ -16,6 +16,7 @@ export interface Interview {
   status: InterviewStatus;
   created_by: number;
   created_at: string;
+  has_questions:boolean
 }
 
 export interface InterviewState {

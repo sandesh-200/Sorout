@@ -1,6 +1,7 @@
 import {
   createSlice,
   isPending,
+  isRejected
 } from "@reduxjs/toolkit";
 
 import type {
@@ -100,6 +101,22 @@ const conversationInterviewSlice = createSlice({
         state.error = null;
       }
     );
+
+    builder.addMatcher(
+     isRejected(startConversation),
+     (state, action) => {
+       state.loading = false;
+       state.error = action.payload as string ?? "Failed to start interview.";
+     }
+   );
+
+      builder.addMatcher(
+     isRejected(sendMessage),
+     (state, action) => {
+       state.sendingMessage = false;
+       state.error = action.payload as string ?? "Failed to send message.";
+     }
+   );
   },
 });
 

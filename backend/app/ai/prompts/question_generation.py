@@ -32,8 +32,6 @@ Instructions:
 - Do not include numbering.
 - Do not provide answers or explanations.
 - Return only the structured output defined below.
-
-{format_instructions}
 """
         ),
         (

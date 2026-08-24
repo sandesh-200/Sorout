@@ -27,7 +27,7 @@ export default function CandidateInterviews() {
       interview.status === "completed" ||
       interview.status === "evaluated"
     ) {
-      navigate(`/candidate/results/${interview.session_id}`);
+      navigate(`/candidate/result/${interview.session_id}`);
     }
   };
 

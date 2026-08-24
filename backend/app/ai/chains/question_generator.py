@@ -8,15 +8,11 @@ from ai.schemas.question_schema import (
     GeneratedQuestionsList,
 )
 
-parser = PydanticOutputParser(
-    pydantic_object=GeneratedQuestionsList
-)
+structured_data = llm.with_structured_output(GeneratedQuestionsList)
 
-prompt = QUESTION_GENERATION_PROMPT.partial(
-    format_instructions=parser.get_format_instructions()
-)
+prompt = QUESTION_GENERATION_PROMPT
 
-chain = prompt | llm | parser
+chain = prompt | structured_data
 
 
 class QuestionGenerator:

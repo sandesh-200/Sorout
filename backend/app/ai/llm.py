@@ -1,13 +1,19 @@
-from langchain_huggingface import HuggingFaceEndpoint, ChatHuggingFace
+import os
+from langchain_groq import ChatGroq
+from langchain_google_genai import ChatGoogleGenerativeAI
 from core.config import settings
 
-llm_endpoint = HuggingFaceEndpoint(
-    repo_id="meta-llama/Llama-3.1-8B-Instruct",
-    task="text-generation",
-    huggingfacehub_api_token=settings.HF_TOKEN,
+llm = ChatGroq(
+    model="openai/gpt-oss-120b",
     temperature=0.3,
-    max_new_tokens=2048,
+    max_tokens=1024,
+    groq_api_key=settings.GROQ_API_KEY,
 )
 
-llm = ChatHuggingFace(llm=llm_endpoint)
-
+# Fallback: Gemini Flash (for when Groq rate-limits)
+llm_fallback = ChatGoogleGenerativeAI(
+    model="gemini-2.0-flash",
+    temperature=0.3,
+    max_output_tokens=1024,
+    google_api_key=settings.GEMINI_API_KEY,
+)
