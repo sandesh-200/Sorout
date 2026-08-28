@@ -34,20 +34,17 @@ class ConversationChat:
     def generate(
         interview,
         messages,
+        current_question,
     ):
-
         context = ConversationContextService.build(interview=interview,messages=messages)
 
-        
-
         return chain.invoke(
-    {
-        "position": interview.job_position,
-        "level": interview.seniority_level,
-        "conversation": context["conversation"],
-        "questions_asked": context["questions_asked"],
-        "candidate_answers": context["candidate_answers"],
-        "interview_questions": context["interview_questions"],
-    }
-)
+            {
+                "position": interview.job_position,
+                "level": interview.seniority_level,
+                "conversation": context["conversation"],
+                "candidate_answers": context["candidate_answers"],
+                "current_question": current_question,
+            }
+        )
          

@@ -16,6 +16,7 @@ export function useVoiceConversation({
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [isSupported, setIsSupported] = useState(true);
+  const [networkError, setNetworkError] = useState(false);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -121,6 +122,14 @@ export function useVoiceConversation({
       if (event.error === "aborted" || event.error === "no-speech") {
         return;
       }
+      if (event.error === "network") {
+        // Chrome's Web Speech API is unreachable (offline / firewall / VPN).
+        // Stop any restart attempts by clearing the intent flag.
+        userIntentToListenRef.current = false;
+        setIsListening(false);
+        setNetworkError(true);
+        return;
+      }
       console.warn("[Voice] Speech recognition error:", event.error);
     };
 
@@ -160,6 +169,7 @@ export function useVoiceConversation({
     stopAudio();
     isAiSpeakingRef.current = false;
     userIntentToListenRef.current = true;
+    setNetworkError(false);
 
     if (recognitionRef.current && !isProcessingRef.current) {
       try {
@@ -247,6 +257,7 @@ export function useVoiceConversation({
     isListening,
     transcript,
     isSupported,
+    networkError,
     startListening,
     stopListening,
     speakText,

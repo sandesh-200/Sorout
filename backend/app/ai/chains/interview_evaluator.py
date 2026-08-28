@@ -1,35 +1,34 @@
-from langchain_core.output_parsers import PydanticOutputParser
-
-from ai.schemas.evaluation_schema import InterviewEvaluation
-from ai.prompts.interview_evaluation import (
-    INTERVIEW_EVALUATION_PROMPT,
-)
-
-from ai.llm import llm
-
-structured_output = llm.with_structured_output(InterviewEvaluation)
-
-prompt = INTERVIEW_EVALUATION_PROMPT
-
-chain = prompt | structured_output
-
+from ai.segmentation.pipeline import InterviewSegmentationPipeline
+from ai.chains.segment_evaluator import evaluate_segments
+from ai.chains.evaluation_synthesizer import synthesize_evaluation
 
 
 class InterviewEvaluator:
 
     @staticmethod
-    def evaluate(
-        position,
-        level,
-        interview_questions,
-        conversation,
+    def evaluate_new(
+        position: str,
+        level: str,
+        messages,
+        pipeline: InterviewSegmentationPipeline,
     ):
-        result = chain.invoke(
-            {
-                "position": position,
-                "level": level,
-                "interview_questions": interview_questions,
-                "conversation": conversation,
-            }
+        segmentation = pipeline.segment(messages)
+
+        segment_evaluations = evaluate_segments(
+            segments=segmentation.segments,
+            position=position,
+            level=level,
         )
-        return result
+
+        synthesis = synthesize_evaluation(
+            segments=segmentation.segments,
+            evaluations=segment_evaluations,
+            position=position,
+            level=level,
+        )
+
+        return {
+            "segments": segmentation.segments,
+            "evaluations": segment_evaluations,
+            "synthesis": synthesis,
+        }

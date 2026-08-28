@@ -57,6 +57,8 @@ class ConversationService:
 
         if session.status == InterviewSessionStatus.not_started:
             session.status = InterviewSessionStatus.ongoing
+            if session.interview.questions:
+                session.current_interview_question_id = session.interview.questions[0].id
 
         existing_ai_message = (
             ConversationRepository.get_latest_ai_message(
@@ -126,27 +128,45 @@ class ConversationService:
         db.commit()
 
         messages = ConversationRepository.get_by_session(
-        db=db,
-        session_id=session.id,
-    )
+            db=db,
+            session_id=session.id,
+        )
+
+        current_question_text = "General discussion"
+        if session.current_interview_question:
+            current_question_text = session.current_interview_question.question.question_text
 
         ai_result = ConversationChat.generate(
-        interview=session.interview,
-        messages=messages,
-    )
+            interview=session.interview,
+            messages=messages,
+            current_question=current_question_text,
+        )
 
-    # Save AI reply
+        # Save AI reply
         ai_message = ConversationRepository.create(
-    db=db,
-    session_id=session.id,
-    role=MessageRole.ai,
-    content=ai_result.reply,
-)
+            db=db,
+            session_id=session.id,
+            role=MessageRole.ai,
+            content=ai_result.reply,
+        )
+
+        # Advance question state if satisfied
+        if getattr(ai_result, 'question_satisfied', False) and not ai_result.completed:
+            current_idx = -1
+            for idx, q in enumerate(session.interview.questions):
+                if q.id == session.current_interview_question_id:
+                    current_idx = idx
+                    break
+            
+            if current_idx != -1 and current_idx + 1 < len(session.interview.questions):
+                session.current_interview_question_id = session.interview.questions[current_idx + 1].id
+            else:
+                ai_result.completed = True
 
         if ai_result.completed:
             session.status = InterviewSessionStatus.completed
 
-            InterviewSessionRepository.update(
+        InterviewSessionRepository.update(
             db=db,
             session=session,
         )
