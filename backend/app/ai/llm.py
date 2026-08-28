@@ -11,9 +11,8 @@ llm = ChatGroq(
 )
 
 # Fallback: Gemini Flash (for when Groq rate-limits)
-llm_fallback = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
-    temperature=0.3,
-    max_output_tokens=1024,
+segmentation_llm = ChatGoogleGenerativeAI(
+    model="gemini-3.6-flash",
+    max_output_tokens=8192,
     google_api_key=settings.GEMINI_API_KEY,
 )

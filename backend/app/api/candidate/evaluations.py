@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends,BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, Request
 from sqlalchemy.orm import Session
 
 from core.database import get_db
@@ -6,6 +6,7 @@ from services.user import candidate_required
 from services.evaluation import EvaluationService
 from schemas.evaluation import InterviewEvaluationResponse
 from models.user import User
+
 
 router = APIRouter(
     prefix="/evaluations",
@@ -16,15 +17,21 @@ router = APIRouter(
 @router.post("/{session_id}/evaluate")
 def evaluate(
     session_id: int,
-    background_tasks:BackgroundTasks,
-    db: Session = Depends(get_db),
+    request: Request,
+    background_tasks: BackgroundTasks,
 ):
+    pipeline = request.app.state.segmentation_pipeline
+
     background_tasks.add_task(
         EvaluationService.evaluate_session,
-        db=db,session_id=session_id
+        session_id=session_id,
+        pipeline=pipeline,
     )
-    
-    return {"message": "Evaluation started. Check back shortly for results."}
+
+    return {
+        "message": "Evaluation started. Check back shortly for results."
+    }
+
 
 @router.get(
     "/{session_id}/result",
@@ -38,5 +45,5 @@ def get_result(
     return EvaluationService.get_result(
         db=db,
         session_id=session_id,
-        candidate_id=current_user.id
+        candidate_id=current_user.id,
     )

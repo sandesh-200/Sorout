@@ -1,50 +1,37 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect,useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "@/api/axios";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { isAxiosError } from "axios";
-import { getApiErrorMessage } from "@/utils/api-error";
+
+import { useAppDispatch,useAppSelector } from '@/app/hooks'
+import { clearEvaluation } from "@/features/evaluation/evaluationSlice";
+
+import { getEvaluationResult } from '@/features/evaluation/evaluationThunk'
+
 import {
   Loader2,
   CheckCircle2,
   TrendingUp,
   TrendingDown,
   MessageSquare,
-  Star,
   ArrowLeft,
   RefreshCw,
 } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
-interface QuestionEvaluation {
-  question: string;
-  answer: string;
-  score: number;
-  feedback: string;
-}
-
-interface EvaluationResult {
-  overall_score: number;
-  overall_feedback: string;
-  strengths: string[];
-  improvements: string[];
-  questions: QuestionEvaluation[];
-}
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function scoreColor(score: number): string {
-  if (score >= 8) return "text-emerald-500";
-  if (score >= 5) return "text-amber-500";
+  if (score >= 9) return "text-emerald-500";
+  if (score >= 7) return "text-amber-500";
   return "text-rose-500";
 }
 
 function scoreBg(score: number): string {
-  if (score >= 8) return "bg-emerald-500/10 border-emerald-500/20";
-  if (score >= 5) return "bg-amber-500/10 border-amber-500/20";
+  if (score >= 9) return "bg-emerald-500/10 border-emerald-500/20";
+  if (score >= 7) return "bg-amber-500/10 border-amber-500/20";
   return "bg-rose-500/10 border-rose-500/20";
 }
 
@@ -61,80 +48,74 @@ export default function InterviewResultPage() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
 
-  const [result, setResult] = useState<EvaluationResult | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+const dispatch = useAppDispatch();
 
-  const fetchResult = useCallback(async () => {
-    if (!sessionId) return;
-    try {
-      const res = await api.get(`/candidate/evaluations/${sessionId}/result`);
-      setResult(res.data);
-      setProcessing(false);
-      setLoading(false);
-    } catch (error: unknown) {
-      if (isAxiosError(error) && error.response?.status === 404) {
-        setProcessing(true);
-        setLoading(false);
-      } else {
-        setError(
-          getApiErrorMessage(error, "Failed to load results.")
-        );
-        setLoading(false);
+const { evaluation, status, error } = useAppSelector(
+  (state) => state.evaluation
+);
+
+const [retryKey, setRetryKey] = useState(0);
+
+
+
+useEffect(() => {
+  if (!sessionId) return;
+
+  dispatch(clearEvaluation());
+
+  let cancelled = false;
+  let timeoutId: ReturnType<typeof setTimeout>;
+
+  const poll = async () => {
+    const resultAction = await dispatch(
+      getEvaluationResult(Number(sessionId))
+    );
+
+    if (cancelled) return;
+
+    if (getEvaluationResult.fulfilled.match(resultAction)) {
+      const result = resultAction.payload;
+
+      if ("status" in result && result.status === "evaluating") {
+        timeoutId = setTimeout(poll, 2000);
       }
     }
-  }, [sessionId]);
+  };
 
-  // Initial fetch
-  useEffect(() => {
-    fetchResult();
-  }, [fetchResult]);
+  poll();
 
-  // Poll every 5 seconds while the AI is still evaluating
-  useEffect(() => {
-    if (!processing) return;
-    const interval = setInterval(fetchResult, 5000);
-    return () => clearInterval(interval);
-  }, [processing, fetchResult]);
+  return () => {
+    cancelled = true;
+    clearTimeout(timeoutId);
+  };
+}, [dispatch, sessionId, retryKey]);
 
-  // ── Loading ──
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground">Loading your results…</p>
+
+
+if (status === "loading" || status === "evaluating") {
+  return (
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <div className="flex max-w-md flex-col items-center gap-4 px-6 text-center">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+
+        <div className="space-y-2">
+          <h1 className="text-lg font-semibold">
+            Your evaluation is being prepared
+          </h1>
+
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Your interview has been completed successfully. We're analyzing
+            your answers and preparing your evaluation report.
+          </p>
+
+          <p className="text-xs text-muted-foreground">
+            This page will update automatically when your results are ready.
+          </p>
         </div>
       </div>
-    );
-  }
-
-  // ── AI still processing ──
-  if (processing) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="text-center max-w-sm space-y-6">
-          <div className="relative mx-auto h-20 w-20">
-            <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
-            <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-              <Star className="h-8 w-8 text-primary" />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <h2 className="text-2xl font-bold tracking-tight">Evaluating Your Interview</h2>
-            <p className="text-sm text-muted-foreground">
-              Our AI is carefully reviewing your responses. This usually takes less than a minute.
-            </p>
-          </div>
-          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            <span>Checking automatically every 5 seconds…</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
+    </div>
+  );
+}
 
   // ── Error ──
   if (error) {
@@ -142,19 +123,22 @@ export default function InterviewResultPage() {
       <div className="flex min-h-screen items-center justify-center bg-background p-4">
         <div className="text-center max-w-sm space-y-4">
           <p className="text-destructive font-medium">{error}</p>
-          <Button variant="outline" onClick={fetchResult}>
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Try Again
-          </Button>
+      <Button
+  variant="outline"
+  onClick={() => setRetryKey((value) => value + 1)}
+>
+  <RefreshCw className="mr-2 h-4 w-4" />
+  Try Again
+</Button>
         </div>
       </div>
     );
   }
 
-  if (!result) return null;
+  if (!evaluation) return null;
 
   const circumference = 2 * Math.PI * 40; // r=40
-  const dashOffset = circumference - (result.overall_score / 10) * circumference;
+  const dashOffset = circumference - (evaluation.overall_score / 10) * circumference;
 
   // ── Results ──
   return (
@@ -197,13 +181,13 @@ export default function InterviewResultPage() {
                     strokeLinecap="round"
                     strokeDasharray={circumference}
                     strokeDashoffset={dashOffset}
-                    className={`transition-all duration-1000 ${scoreColor(result.overall_score)}`}
+                    className={`transition-all duration-1000 ${scoreColor(evaluation.overall_score)}`}
                     style={{ stroke: "currentColor" }}
                   />
                 </svg>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className={`text-4xl font-black ${scoreColor(result.overall_score)}`}>
-                    {result.overall_score}
+                  <span className={`text-4xl font-black ${scoreColor(evaluation.overall_score)}`}>
+                    {evaluation.overall_score}
                   </span>
                   <span className="text-xs text-muted-foreground font-medium">/ 10</span>
                 </div>
@@ -216,12 +200,12 @@ export default function InterviewResultPage() {
                   <h1 className="text-2xl font-bold tracking-tight">Interview Complete</h1>
                   <Badge
                     variant="outline"
-                    className={`${scoreBg(result.overall_score)} ${scoreColor(result.overall_score)} border font-semibold`}
+                    className={`${scoreBg(evaluation.overall_score)} ${scoreColor(evaluation.overall_score)} border font-semibold`}
                   >
-                    {scoreLabel(result.overall_score)}
+                    {scoreLabel(evaluation.overall_score)}
                   </Badge>
                 </div>
-                <p className="text-muted-foreground leading-relaxed">{result.overall_feedback}</p>
+                <p className="text-muted-foreground leading-relaxed">{evaluation.overall_feedback}</p>
               </div>
             </div>
           </div>
@@ -238,7 +222,7 @@ export default function InterviewResultPage() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {result.strengths.map((s, i) => (
+                {evaluation.strengths.map((s, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
                     {s}
@@ -257,7 +241,7 @@ export default function InterviewResultPage() {
             </CardHeader>
             <CardContent>
               <ul className="space-y-2">
-                {result.improvements.map((s, i) => (
+                {evaluation.improvements.map((s, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm">
                     <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-amber-500 shrink-0" />
                     {s}
@@ -268,46 +252,87 @@ export default function InterviewResultPage() {
           </Card>
         </div>
 
-        {/* Per-question breakdown */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <MessageSquare className="h-5 w-5 text-muted-foreground" />
-            Question Breakdown
-          </h2>
+{/* Segment Breakdown */}
+<div className="space-y-4">
+  <h2 className="text-lg font-semibold flex items-center gap-2">
+    <MessageSquare className="h-5 w-5 text-muted-foreground" />
+    Interview Breakdown
+  </h2>
 
-          {result.questions.map((q, i) => (
-            <Card key={i} className={`border ${scoreBg(q.score)}`}>
-              <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Question {i + 1}
-                  </span>
-                  <Badge
-                    variant="outline"
-                    className={`shrink-0 font-bold ${scoreColor(q.score)} border ${scoreBg(q.score)}`}
-                  >
-                    {q.score}/10
-                  </Badge>
-                </div>
-                <p className="text-sm font-medium leading-snug">{q.question}</p>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="rounded-md bg-muted/40 p-3">
-                  <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
-                    Your Answer
-                  </p>
-                  <p className="text-sm leading-relaxed">{q.answer}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
-                    Feedback
-                  </p>
-                  <p className="text-sm leading-relaxed text-foreground/80">{q.feedback}</p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+  {evaluation.segments.map((segment, i) => (
+    <Card
+      key={i}
+      className={`border ${scoreBg(segment.evaluation.score)}`}
+    >
+      <CardHeader className="pb-2">
+        <div className="flex items-start justify-between gap-3">
+          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            Discussion {i + 1}
+          </span>
+
+          <Badge
+            variant="outline"
+            className={`shrink-0 font-bold ${scoreColor(
+              segment.evaluation.score
+            )} border ${scoreBg(segment.evaluation.score)}`}
+          >
+            {segment.evaluation.score}/10
+          </Badge>
         </div>
+      </CardHeader>
+
+      <CardContent className="space-y-4">
+        <div className="rounded-md bg-muted/40 p-3">
+          <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
+            Discussion
+          </p>
+
+          <p className="text-sm leading-relaxed whitespace-pre-line">
+            {segment.discussion}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-1 uppercase tracking-wider">
+            Feedback
+          </p>
+
+          <p className="text-sm leading-relaxed text-foreground/80">
+            {segment.evaluation.feedback}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
+            Strengths
+          </p>
+
+          <ul className="space-y-1">
+            {segment.evaluation.strengths.map((strength, index) => (
+              <li key={index} className="text-sm">
+                • {strength}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wider">
+            Weaknesses
+          </p>
+
+          <ul className="space-y-1">
+            {segment.evaluation.weaknesses.map((weakness, index) => (
+              <li key={index} className="text-sm">
+                • {weakness}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </CardContent>
+    </Card>
+  ))}
+</div>
 
         {/* CTA */}
         <div className="flex justify-center pb-4">

@@ -15,6 +15,7 @@ import {
   setSessionId,
   resetConversation
 } from "@/features/conversationInterview/conversationInterviewSlice";
+import { clearEvaluation } from "@/features/evaluation/evaluationSlice";
 import { useVoiceConversation } from "@/hooks/useVoiceConversation";
 
 import { Button } from "@/components/ui/button";
@@ -52,7 +53,12 @@ export default function ConversationalWorkspace() {
   const { messages, completed, loading, sendingMessage } =
     useSelector((state: RootState) => state.conversationInterview);
 
-  const { loading: evaluating, evaluation } = useSelector((state: RootState) => state.evaluation);
+  const { status, evaluation } = useSelector(
+  (state: RootState) => state.evaluation
+);
+
+const evaluating =
+  status === "loading" || status === "evaluating";
 
   const { isListening, transcript, isSupported, startListening, stopListening, speakText } =
     useVoiceConversation({
@@ -121,46 +127,57 @@ export default function ConversationalWorkspace() {
     handleTranscriptFinalizedRef.current = processCandidateAnswer;
   }, [processCandidateAnswer]);
 
-  // Start initial interview session on page mount
-  useEffect(() => {
+useEffect(() => {
+  dispatch(resetConversation());
+  dispatch(clearEvaluation());
+
+  if (numericSessionId && !initializedRef.current) {
+    initializedRef.current = true;
+    dispatch(setSessionId(numericSessionId));
+
+    dispatch(startConversation(numericSessionId)).then(async (resultAction) => {
+      if (startConversation.fulfilled.match(resultAction)) {
+        const firstMessage = resultAction.payload.content;
+
+        setIsAiSpeaking(true);
+        setStreamingAiText("");
+
+        await speakText(
+          firstMessage,
+          () => {
+            setIsAiSpeaking(false);
+            setStreamingAiText(null);
+            startListening();
+          },
+          (progressFraction) => {
+            const charsToShow = Math.max(
+              1,
+              Math.floor(progressFraction * firstMessage.length)
+            );
+
+            setStreamingAiText(firstMessage.slice(0, charsToShow));
+          }
+        );
+      }
+    });
+  }
+
+  return () => {
     dispatch(resetConversation());
-    if (numericSessionId && !initializedRef.current) {
-      initializedRef.current = true;
-      dispatch(setSessionId(numericSessionId));
-
-      dispatch(startConversation(numericSessionId)).then(async (resultAction) => {
-        if (startConversation.fulfilled.match(resultAction)) {
-          const firstMessage = resultAction.payload.content;
-          setIsAiSpeaking(true);
-          setStreamingAiText("");
-
-          await speakText(
-            firstMessage,
-            () => {
-              setIsAiSpeaking(false);
-              setStreamingAiText(null);
-              startListening();
-            },
-            (progressFraction) => {
-              const charsToShow = Math.max(1, Math.floor(progressFraction * firstMessage.length));
-              setStreamingAiText(firstMessage.slice(0, charsToShow));
-            }
-          );
-        }
-      });
-    }
-
-    return ()=>{
-      dispatch(resetConversation())
-    }
-  }, [numericSessionId, dispatch, speakText, startListening]);
-
-  const handleCompleteInterview = () => {
-    if (numericSessionId) {
-     dispatch(evaluateInterview(numericSessionId));
-     navigate(`/candidate/result/${numericSessionId}`);
-    }
   };
+}, [numericSessionId, dispatch, speakText, startListening]);
+
+const handleCompleteInterview = async () => {
+  if (!numericSessionId) return;
+
+  const resultAction = await dispatch(
+    evaluateInterview(numericSessionId)
+  );
+
+  if (evaluateInterview.fulfilled.match(resultAction)) {
+    navigate(`/candidate/result/${numericSessionId}`);
+  }
+};
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,24 +207,33 @@ export default function ConversationalWorkspace() {
     <div className="h-screen w-screen bg-background text-foreground flex flex-col overflow-hidden antialiased selection:bg-primary/20">
       {/* Workspace Context Header */}
       <header className="h-16 border-b border-border/60 px-6 flex items-center justify-between bg-card/40 backdrop-blur-md shrink-0 z-10">
-        <div className="flex items-center gap-3">
- <InterviewerAvatar size="sm" speaking={isAiSpeaking} thinking={sendingMessage} />
- <div>
-   <div className="flex items-center gap-2">
-     <h1 className="text-sm font-semibold tracking-tight">Alex</h1>
-     <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">AI Interviewer</span>
-     <span className="text-xs text-muted-foreground font-mono opacity-50">#{numericSessionId}</span>
-   </div>
-   <p className="text-[11px] text-muted-foreground">Powered by Sorout AI Assessment Engine</p>
- </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-sm font-semibold tracking-tight">Technical Interview Workspace</h1>
-              <span className="text-xs text-muted-foreground font-mono">#{numericSessionId}</span>
-            </div>
-            <p className="text-[11px] text-muted-foreground">Sorout AI Assessment Engine</p>
-          </div>
-        </div>
+<div className="flex items-center gap-3">
+  <InterviewerAvatar
+    size="sm"
+    speaking={isAiSpeaking}
+    thinking={sendingMessage}
+  />
+
+  <div>
+    <div className="flex items-center gap-2">
+      <h1 className="text-sm font-semibold tracking-tight">
+        Sabrina
+      </h1>
+
+      <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded font-medium">
+        AI Interviewer
+      </span>
+
+      <span className="text-xs text-muted-foreground font-mono opacity-50">
+        #{numericSessionId}
+      </span>
+    </div>
+
+    <p className="text-[11px] text-muted-foreground">
+      Powered by Sorout AI Assessment Engine
+    </p>
+  </div>
+</div>
 
         <div className="flex items-center gap-3">
           <Badge

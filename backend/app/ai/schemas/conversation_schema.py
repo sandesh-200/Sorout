@@ -6,6 +6,10 @@ class ConversationResponse(BaseModel):
         description="The AI interviewer's next response."
     )
 
+    question_satisfied: bool = Field(
+        description="True if the candidate has sufficiently answered the current blueprint question, meaning the interviewer is ready to move on to the next topic."
+    )
+
     completed: bool = Field(
         description="Whether the interview should end."
     )

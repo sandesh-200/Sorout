@@ -8,7 +8,9 @@ class InterviewSessionStatus(str, enum.Enum):
     not_started = "not_started"
     ongoing = "ongoing"
     completed = "completed"
+    evaluating = "evaluating"
     evaluated = "evaluated"
+    evaluation_failed = "evaluation_failed"
 
 
 class InterviewSession(Base):
