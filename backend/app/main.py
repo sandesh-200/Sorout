@@ -1,9 +1,7 @@
 from contextlib import asynccontextmanager
-
-from sentence_transformers import SentenceTransformer
-
 from ai.segmentation.similarity import SemanticSimilarity
 from ai.segmentation.pipeline import InterviewSegmentationPipeline
+from ai.llm import embedding_model
 
 import os
 from fastapi import FastAPI,APIRouter
@@ -20,19 +18,14 @@ from routers.shared_router import router as shared_router
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Loading SentenceTransformer...")
-
-    model = SentenceTransformer("all-MiniLM-L6-v2",token=settings.HF_TOKEN)
 
     similarity = SemanticSimilarity(
-        model=model,
+        embedding_model=embedding_model,
     )
 
     app.state.segmentation_pipeline = InterviewSegmentationPipeline(
         similarity_model=similarity,
     )
-
-    print("SentenceTransformer loaded.")
 
     yield
 

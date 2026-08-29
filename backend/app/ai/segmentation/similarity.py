@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 import numpy as np
-from sentence_transformers import SentenceTransformer
+from langchain_core.embeddings import Embeddings
 
 from ai.segmentation.utterance_aggregator import AggregatedUtterance
 
@@ -20,14 +20,33 @@ class SimilarityMeasurement:
 
 class SemanticSimilarity:
     """
-    Generates embeddings and calculates semantic similarity.
+    Calculates semantic similarity between utterances
+    using a LangChain-compatible embedding model.
     """
 
     def __init__(
         self,
-        model: SentenceTransformer,
+        embedding_model: Embeddings,
     ):
-        self.model = model
+        self.embedding_model = embedding_model
+
+    def _normalize_embeddings(
+        self,
+        embeddings: list[list[float]],
+    ) -> np.ndarray:
+
+        vectors = np.asarray(
+            embeddings,
+            dtype=np.float32,
+        )
+
+        norms = np.linalg.norm(
+            vectors,
+            axis=1,
+            keepdims=True,
+        )
+
+        return vectors / norms
 
     def compare(
         self,
@@ -38,15 +57,18 @@ class SemanticSimilarity:
         Calculate semantic similarity between two texts.
         """
 
-        embeddings = self.model.encode(
-            [text_a, text_b],
-            normalize_embeddings=True,
+        embeddings = self.embedding_model.embed_documents(
+            [text_a, text_b]
+        )
+
+        normalized_embeddings = self._normalize_embeddings(
+            embeddings
         )
 
         return float(
             np.dot(
-                embeddings[0],
-                embeddings[1],
+                normalized_embeddings[0],
+                normalized_embeddings[1],
             )
         )
 
@@ -63,17 +85,20 @@ class SemanticSimilarity:
             for utterance in utterances
         ]
 
-        embeddings = self.model.encode(
-            texts,
-            normalize_embeddings=True,
+        embeddings = self.embedding_model.embed_documents(
+            texts
+        )
+
+        normalized_embeddings = self._normalize_embeddings(
+            embeddings
         )
 
         measurements: list[SimilarityMeasurement] = []
 
         for index in range(1, len(utterances)):
 
-            previous_embedding = embeddings[index - 1]
-            current_embedding = embeddings[index]
+            previous_embedding = normalized_embeddings[index - 1]
+            current_embedding = normalized_embeddings[index]
 
             similarity = float(
                 np.dot(
