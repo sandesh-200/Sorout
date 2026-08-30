@@ -313,3 +313,8 @@
 html {
   scroll-behavior: smooth;
 }
+
+/* index.css */
+@utility dot-bounce {
+  @apply h-1 w-1 rounded-full bg-primary animate-bounce motion-reduce:animate-none;
+}

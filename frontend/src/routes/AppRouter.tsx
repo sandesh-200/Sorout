@@ -11,11 +11,11 @@ import CandidateLayout from "@/layouts/CandidateLayout";
 import CandidateInterviews from "@/pages/candidate/CandidateInterviews";
 import InterviewInstructionsPage from "@/pages/candidate/InterviewInstructionsPage";
 import InterviewResultPage from "@/pages/candidate/InterviewResultPage";
-import ConversationalWorkspace from "@/pages/candidate/ConversationalWorkspace";
 import LandingPage from "@/pages/marketing/LandingPage";
 import { OnboardingPage } from "@/pages/auth/OnboardingPage";
 import JoinPage from "@/pages/joinLink/JoinPage";
 import Candidates from "@/pages/admin/Candidates";
+import ConversationalSpace from "@/pages/candidate/ConversationSpace";
 
 const AnalyticsPage = () => (
 	<div className="space-y-2">
@@ -95,7 +95,7 @@ export default function AppRouter() {
 				path="/candidate/workspace/:sessionId"
 				element={
 					<ProtectedRoute allowedRoles={["candidate"]}>
-						<ConversationalWorkspace />
+						<ConversationalSpace />
 					</ProtectedRoute>
 				}
 			/>
