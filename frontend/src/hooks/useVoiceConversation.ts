@@ -14,22 +14,26 @@ export function useVoiceConversation({
   ttsApiEndpoint = `${import.meta.env.VITE_API_URL || "http://localhost:8000/api"}/tts`,
 }: UseVoiceConversationProps) {
   const [isListening, setIsListening] = useState(false);
-  const [transcript, setTranscript] = useState("");
+  const [transcript, setTranscript] = useState(""); 
   const [isSupported, setIsSupported] = useState(true);
   const [networkError, setNetworkError] = useState(false);
 
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const latestTranscriptRef = useRef("");
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const isRecordingRef = useRef(false);
+
   const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const currentObjectUrlRef = useRef<string | null>(null);
 
-  const userIntentToListenRef = useRef(false);
   const isAiSpeakingRef = useRef(isAiSpeaking);
   const isProcessingRef = useRef(isProcessing);
   const onTranscriptFinalizedRef = useRef(onTranscriptFinalized);
 
-  // Keep refs up-to-date without re-binding recognition callbacks
+  const STT_ENDPOINT = `${import.meta.env.VITE_API_URL || "http://localhost:8000/api"}/stt`;
+
   useEffect(() => {
     onTranscriptFinalizedRef.current = onTranscriptFinalized;
   }, [onTranscriptFinalized]);
@@ -41,10 +45,6 @@ export function useVoiceConversation({
   useEffect(() => {
     isProcessingRef.current = isProcessing;
   }, [isProcessing]);
-
-  useEffect(() => {
-    latestTranscriptRef.current = transcript;
-  }, [transcript]);
 
   const stopAudio = useCallback(() => {
     if (currentAudioRef.current) {
@@ -60,132 +60,153 @@ export function useVoiceConversation({
     }
   }, []);
 
-  const stopListening = useCallback(() => {
-    userIntentToListenRef.current = false;
-
+  const cleanupRecording = useCallback(() => {
     if (silenceTimerRef.current) {
       clearTimeout(silenceTimerRef.current);
       silenceTimerRef.current = null;
     }
-
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // Safe cleanup
-      }
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
     }
+    if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+      audioContextRef.current.close().catch(console.error);
+      audioContextRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    isRecordingRef.current = false;
     setIsListening(false);
   }, []);
 
+  const stopListening = useCallback(() => {
+    cleanupRecording();
+  }, [cleanupRecording]);
+
   useEffect(() => {
-    const SpeechRecognition =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       setIsSupported(false);
-      return;
     }
-
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-
-    recognition.onstart = () => {
-      setIsListening(true);
-    };
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let currentTranscript = "";
-      for (let i = 0; i < event.results.length; i++) {
-        currentTranscript += event.results[i][0].transcript;
-      }
-      setTranscript(currentTranscript);
-
-      if (silenceTimerRef.current) {
-        clearTimeout(silenceTimerRef.current);
-      }
-
-      // Auto-finalize speech after 1.8 seconds of continuous silence
-      silenceTimerRef.current = setTimeout(() => {
-        const finalSpeech = latestTranscriptRef.current.trim();
-        if (finalSpeech) {
-          stopListening();
-          onTranscriptFinalizedRef.current(finalSpeech);
-          setTranscript("");
-        }
-      }, 1800);
-    };
-
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      if (event.error === "aborted" || event.error === "no-speech") {
-        return;
-      }
-      if (event.error === "network") {
-        // Chrome's Web Speech API is unreachable (offline / firewall / VPN).
-        // Stop any restart attempts by clearing the intent flag.
-        userIntentToListenRef.current = false;
-        setIsListening(false);
-        setNetworkError(true);
-        return;
-      }
-      console.warn("[Voice] Speech recognition error:", event.error);
-    };
-
-    recognition.onend = () => {
-      if (
-        userIntentToListenRef.current &&
-        !isAiSpeakingRef.current &&
-        !isProcessingRef.current
-      ) {
-        try {
-          recognition.start();
-        } catch {
-          setIsListening(false);
-        }
-      } else {
-        setIsListening(false);
-      }
-    };
-
-    recognitionRef.current = recognition;
-
     return () => {
-      userIntentToListenRef.current = false;
+      cleanupRecording();
       stopAudio();
-      if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch {
-          // Safe cleanup
-        }
-      }
     };
-  }, [stopListening, stopAudio]);
+  }, [cleanupRecording, stopAudio]);
 
-  const startListening = useCallback(() => {
-    stopAudio();
-    isAiSpeakingRef.current = false;
-    userIntentToListenRef.current = true;
-    setNetworkError(false);
+  const processAudioBlob = useCallback(async (audioBlob: Blob) => {
+    try {
+      const formData = new FormData();
+      formData.append("file", audioBlob, "audio.webm");
 
-    if (recognitionRef.current && !isProcessingRef.current) {
-      try {
-        setTranscript("");
-        recognitionRef.current.start();
-      } catch (error: unknown) {
-        if (error instanceof DOMException && error.name !== "InvalidStateError") {
-          console.error("[Voice] Failed to start recognition:", error);
-        }
+      const response = await fetch(STT_ENDPOINT, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error(`STT API failed with status ${response.status}`);
       }
-    }
-  }, [stopAudio]);
 
-  /**
-   * Fetches audio from FastAPI `/api/tts` endpoint and syncs text progress with playback.
-   */
+      const data = await response.json();
+      if (data.transcript && data.transcript.trim() !== "") {
+        onTranscriptFinalizedRef.current(data.transcript.trim());
+      }
+    } catch (error) {
+      console.error("[Voice] Failed to process audio for STT:", error);
+      setNetworkError(true);
+    }
+  }, [STT_ENDPOINT]);
+
+  const startListening = useCallback(async () => {
+    stopAudio();
+    cleanupRecording();
+    isAiSpeakingRef.current = false;
+    setNetworkError(false);
+    setTranscript(""); 
+
+    if (isProcessingRef.current) return;
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        if (audioChunksRef.current.length > 0) {
+          const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+          processAudioBlob(audioBlob);
+        }
+      };
+
+      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+      const audioContext = new AudioContextClass();
+      audioContextRef.current = audioContext;
+      const source = audioContext.createMediaStreamSource(stream);
+      const analyser = audioContext.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.minDecibels = -60; // Silence threshold
+      analyser.smoothingTimeConstant = 0.2;
+      source.connect(analyser);
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      let hasSpoken = false;
+      let silenceStart: number | null = null;
+      const SILENCE_DURATION_THRESHOLD = 1500; // 1.5 seconds of silence
+
+      const checkSilence = () => {
+        if (!isRecordingRef.current) return;
+
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+
+        // If the user starts speaking (volume spikes above threshold)
+        if (average > 15) {
+          if (!hasSpoken) {
+            hasSpoken = true;
+            setTranscript("Listening...");
+          }
+          silenceStart = null; // reset silence timer while they speak
+        } else if (hasSpoken) {
+          // If they have spoken, but are now quiet, start timing the silence
+          if (silenceStart === null) {
+            silenceStart = Date.now();
+          } else if (Date.now() - silenceStart > SILENCE_DURATION_THRESHOLD) {
+            // Stop recording due to silence
+            cleanupRecording();
+            return;
+          }
+        }
+
+        requestAnimationFrame(checkSilence);
+      };
+
+      mediaRecorder.start(250); // record in chunks
+      isRecordingRef.current = true;
+      setIsListening(true);
+      checkSilence();
+
+    } catch (error) {
+      console.error("[Voice] Failed to start media recorder:", error);
+      setIsSupported(false);
+    }
+  }, [cleanupRecording, stopAudio, processAudioBlob]);
+
   const speakText = useCallback(
     async (
       text: string,
@@ -236,7 +257,6 @@ export function useVoiceConversation({
         };
 
         audio.onended = handleAudioPlaybackEnd;
-
         audio.onerror = (e) => {
           console.error("[Voice] Audio playback error:", e);
           handleAudioPlaybackEnd();

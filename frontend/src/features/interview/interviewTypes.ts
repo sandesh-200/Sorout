@@ -63,7 +63,6 @@ export interface AssignCandidatesResponse {
 export interface CandidateInterview {
   session_id: number;
   interview_id: number;
-
   title: string;
   job_position: string;
   seniority_level: string;

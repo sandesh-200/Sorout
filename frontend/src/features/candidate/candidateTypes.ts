@@ -2,7 +2,8 @@ export type InterviewSessionStatus =
   | "not_started"
   | "ongoing"
   | "completed"
-  | "evaluated";
+  | "evaluated"
+  | "cancelled";
 
 export interface Candidate {
   id: number;
