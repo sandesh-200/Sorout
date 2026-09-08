@@ -6,6 +6,7 @@ import SignupPage from "@/pages/auth/SignupPage";
 import { ProtectedRoute } from "./ProtectedRoute";
 
 import AdminLayout from "@/layouts/AdminLayout";
+import AdminDashboardPage from "@/pages/admin/AdminDashboard";
 import Interviews from "@/pages/admin/Interviews";
 import CandidateLayout from "@/layouts/CandidateLayout";
 import CandidateInterviews from "@/pages/candidate/CandidateInterviews";
@@ -17,12 +18,7 @@ import JoinPage from "@/pages/joinLink/JoinPage";
 import Candidates from "@/pages/admin/Candidates";
 import ConversationalSpace from "@/pages/candidate/ConversationSpace";
 
-const AnalyticsPage = () => (
-	<div className="space-y-2">
-		<h1 className="text-2xl font-bold">Analytics Dashboard</h1>
-		<p className="text-muted-foreground">Welcome back!</p>
-	</div>
-);
+
 
 const PlaceholderPage = ({ title }: { title: string }) => (
 	<div className="space-y-2">
@@ -67,7 +63,7 @@ export default function AppRouter() {
 			>
 				{/* Matches /admin */}
 				<Route index element={<Navigate to="/admin/dashboard" replace />} />
-				<Route path="dashboard" element={<AnalyticsPage />} />
+				<Route path="dashboard" element={<AdminDashboardPage />} />
 				<Route path="interviews" element={<Interviews />} />
 				<Route path="candidates" element={<Candidates />} />
 				<Route path="settings" element={<PlaceholderPage title="Admin Settings" />} />

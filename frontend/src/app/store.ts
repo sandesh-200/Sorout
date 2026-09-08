@@ -5,7 +5,7 @@ import conversationInterviewReducer from '@/features/conversationInterview/conve
 import userReducer from '@/features/user/userSlice'
 import evaluationReducer from '@/features/evaluation/evaluationSlice'
 import questionReducer from '@/features/question/questionSlice'
-
+import dashboardReducer from "@/features/dashboard/dashboardSlice";
 import adminJoinLinkReducer from '@/features/joinLink/joinLinkSlice'
 
 export const store = configureStore({
@@ -16,7 +16,8 @@ export const store = configureStore({
         user:userReducer,
         evaluation:evaluationReducer,
         question:questionReducer,
-        adminJoinLink: adminJoinLinkReducer
+        adminJoinLink: adminJoinLinkReducer,
+        dashboard:dashboardReducer
     }
 })
 
