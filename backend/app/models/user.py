@@ -10,7 +10,12 @@ class User(Base):
     name = Column(String(100), nullable=True)
     email = Column(String(255), unique=True, index=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
-    is_onboarded = Column(Boolean, nullable=False, default=False)
+    # is_onboarded = Column(Boolean, nullable=False, default=False)
+    is_onboarded = Column(
+    Boolean,
+    nullable=False,
+    server_default="false",
+)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
 
     memberships = relationship("OrganizationMembership", back_populates="user", cascade="all, delete-orphan")
